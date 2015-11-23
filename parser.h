@@ -16,6 +16,11 @@ typedef struct {
 	char cmd_i[CMD_LENGTH];
 } router_cmd_t;
 
+//router_id
+typedef struct {
+	char id[DEFAULT_LENGTH];
+	char data[DEFAULT_LENGTH];
+} router_id_t;
 //router_info
 typedef struct {
 #define INFO_LENGTH 64

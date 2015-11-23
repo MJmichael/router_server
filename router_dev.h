@@ -11,11 +11,11 @@
 typedef struct {
 //	void *handle;
 
-	int (*reboot)(void);
-	int (*reset)(void);
-	int (*search)(void);
-	int (*wan_config)(router_wan_t*);
-	int (*wifi_config)(router_wifi_t*);
+	char* (*reboot)(void);
+	char* (*reset)(void);
+	char* (*search)(router_id_t*);
+	char* (*wan_config)(router_wan_t*);
+	char* (*wifi_config)(router_wifi_t*);
 } router_dev_t;
 
 

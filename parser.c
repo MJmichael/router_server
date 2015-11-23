@@ -30,28 +30,34 @@ int start_with(char s1[], char s2[])
 	return (s2[i] != '\0') ? 0 : 1;
 }
 
-void handle_cmd(char cmd[], char data[])
+void* handle_cmd(char cmd[], char data[])
 {
+	printf("cmd:%s, data:%s\n", cmd, data);
+
 	if (start_with(cmd, "search"))			
 	{
-		g_router->search();
-		printf("cmd:%s, data:%s\n", cmd, data);
+		router_id_t id;
+
+		sscanf(data, "%[^:]%*c%s", id.id, id.data);
+		g_router->search(&id);
 	}else if(start_with(cmd, "set_wan_config"))
 	{
-		g_router->wan_config(NULL);
-		printf("cmd:%s, data:%s\n", cmd, data);
+		router_wan_t wan_config;
+		
+		sscanf(data, "%[^:]%*c%s", wan_config.key, wan_config.name);
+		g_router->wan_config(&wan_config);
 	}else if(start_with(cmd, "set_wifi_config"))
 	{
-		g_router->wifi_config(NULL);
-		printf("cmd:%s, data:%s\n", cmd, data);
+		router_wifi_t wifi_config;
+		
+		sscanf(data, "%[^:]%*c%[^:]%*c%s", wifi_config.name, wifi_config.key_type, wifi_config.key);
+		g_router->wifi_config(&wifi_config);
 	}else if(start_with(cmd, "set_router_reboot"))
 	{
 		g_router->reboot();
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}else if(start_with(cmd, "set_router_reset"))
 	{
 		g_router->reset();
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}
 }
 
@@ -70,7 +76,7 @@ void parser_buf(char buf[])
 //main loop
 int main(int argc, char * argv[])  
 {  
-	char str[]="UBoxV002:search:search_box;id:12345";  
+	char str[]="UBoxV002:search:search_box;id:172.18.8.21";  
 	char *ptr, *tmp;  
 
 	router_cmd_t cmd;

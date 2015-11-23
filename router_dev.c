@@ -8,41 +8,42 @@
 #include <stdlib.h>
 
 #include "router_dev.h"
+#include "parser.h"
 
 //相关接口封装
 //router reboot;1:success, 0:failed
-static int router_reboot(void)
+static char* router_reboot(void)
 {
 	printf("%s\n", __FUNCTION__);
-	return 0;
+	return NULL;
 }
 
 //router reset
-static int router_reset(void)
+static char* router_reset(void)
 {
 	printf("%s\n", __FUNCTION__);
-	return 0;
+	return NULL;
 }
 
 //router search 
-static int router_search(void)
+static char* router_search(router_id_t *id)
 {
 	printf("%s\n", __FUNCTION__);
-	return 0;
+	return NULL;
 }
 
 //wan config
-static int set_wan_config(router_wan_t *config)
+static char* set_wan_config(router_wan_t *config)
 {
 	printf("%s\n", __FUNCTION__);
-	return 0;
+	return NULL;
 }
 
 //wifi config
-static int set_wifi_config(router_wifi_t *config)
+static char* set_wifi_config(router_wifi_t *config)
 {
 	printf("%s\n", __FUNCTION__);
-	return 0;
+	return NULL;
 }
 
 //init router handle

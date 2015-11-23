@@ -32,26 +32,23 @@ int start_with(char s1[], char s2[])
 
 void handle_cmd(char cmd[], char data[])
 {
+	printf("cmd:%s, data:%s\n", cmd, data);
+
 	if (start_with(cmd, "search"))			
 	{
 		g_router->search();
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}else if(start_with(cmd, "set_wan_config"))
 	{
 		g_router->wan_config(NULL);
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}else if(start_with(cmd, "set_wifi_config"))
 	{
 		g_router->wifi_config(NULL);
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}else if(start_with(cmd, "set_router_reboot"))
 	{
 		g_router->reboot();
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}else if(start_with(cmd, "set_router_reset"))
 	{
 		g_router->reset();
-		printf("cmd:%s, data:%s\n", cmd, data);
 	}
 }
 

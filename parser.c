@@ -96,6 +96,9 @@ int parser_init(void)
 		return -1;
 	}
 
+#ifdef _DEBUG_PARSER_
+	printf("router device open success\n");
+#endif
 	return 0;
 }
 

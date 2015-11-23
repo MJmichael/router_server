@@ -12,6 +12,10 @@
 #include "router_dev.h"
 #include "parser.h"
 
+#ifndef _DEBUG_MAIN_
+#define _DEBUG_MAIN_
+#endif
+
 #define ERR_EXIT(m) \
     do { \
         perror(m); \
@@ -34,7 +38,7 @@ void loop(int sock)
         ERR_EXIT( "bind error"); 
     }   
 
-//recv udp broadcast  
+//for recv udp broadcast  
     struct sockaddr_in recvaddr;  
     
     bzero(&recvaddr, sizeof(struct sockaddr_in));
@@ -46,31 +50,36 @@ void loop(int sock)
     int n;
     socklen_t recvlen; 
      
-    do { 
-        recvlen = sizeof(recvaddr); 
-        memset(recvbuf,  0,  sizeof(recvbuf)); 
-        n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen); 
-        if(n == -1) 
-        { 
-            if (errno == EINTR) 
-            {
-                continue;
-            } 
-        } 
-        else if(n >  0)
-        { 
-            printf("%s\n", recvbuf);
-            if(start_with(recvbuf, "UBoxV002"))
-            {
-                parser_cmd(recvbuf, sendbuf);
-                
-                sendto(sock, sendbuf, strlen(sendbuf),  0, (struct sockaddr *)&recvaddr, recvlen);
-                continue;
-            }
-        } 
-    } while(1); 
-    close(sock); 
-} 
+	do {
+		recvlen = sizeof(recvaddr);
+		memset(recvbuf,  0,  sizeof(recvbuf));
+		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
+#ifdef _DEBUG_MAIN_
+		printf("%s\n", recvbuf);
+#endif
+
+		if(n == -1)
+		{
+			if (errno == EINTR)
+			{
+				continue;
+			}
+		}
+		else if(n >  0)
+		{
+			if(start_with(recvbuf, "UBoxV002"))
+			{
+				if(parser_cmd(recvbuf, sendbuf) == 0) 
+				{
+//response to client, send	
+					sendto(sock, sendbuf, strlen(sendbuf),  0, (struct sockaddr *)&recvaddr, recvlen);
+				}
+				continue;
+			}
+		}
+	} while(1);
+	close(sock);
+}
 
 int main(int argc, char* argv[]) 
 { 
@@ -80,7 +89,7 @@ int main(int argc, char* argv[])
 //2.create sock
     int sock; 
     
-    if ((sock = socket(PF_INET, SOCK_DGRAM,  0)) <  0)
+    if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
     {
         ERR_EXIT( "socket error"); 
     }

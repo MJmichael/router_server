@@ -6,11 +6,9 @@
  ************************************************************************/
 #ifndef _ROUTER_DEV_H
 #define _ROUTER_DEV_H
-#include "parser.h"
+#include "router_base_i.h"
 
 typedef struct {
-	//	void *handle;
-
 	int (*reboot)(void*);
 	int (*reset)(void*);
 	int (*search)(router_id_t*, void*);

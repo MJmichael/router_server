@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
     {
         ERR_EXIT( "socket error"); 
     }
+
 //3.loop
     loop(sock);   
 

@@ -10,6 +10,7 @@
 
 #include "parser.h"
 #include "router_dev.h"
+#include "router_base_i.h"
 
 #ifndef _DEBUG_PARSER_
 #define _DEBUG_PARSER_  
@@ -36,6 +37,10 @@ int start_with(char s1[], char s2[])
 
 static int handle_cmd(char cmd[], char data[], void* context)
 {
+	if (context == NULL)
+	{
+		return -1;
+	}
 #ifdef _DEBUG_PARSER_
 	printf("cmd:%s, data:%s\n", cmd, data);
 #endif

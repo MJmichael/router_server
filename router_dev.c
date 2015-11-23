@@ -29,6 +29,8 @@ static int router_reboot(void* context)
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "1");
 
+	system("reboot");
+
 	return 0;
 }
 

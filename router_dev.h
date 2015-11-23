@@ -11,8 +11,8 @@
 typedef struct {
 	//	void *handle;
 
-	int (*reboot)(void);
-	int (*reset)(void);
+	int (*reboot)(void*);
+	int (*reset)(void*);
 	int (*search)(router_id_t*, void*);
 	int (*wan_config)(router_wan_t*, void*);
 	int (*wifi_config)(router_wifi_t*, void*);

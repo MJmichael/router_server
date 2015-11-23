@@ -12,7 +12,7 @@
 #include "router_dev.h"
 
 #ifndef _DEBUG_PARSER_
-#define _DEBUG_PARSER_ 1
+#define _DEBUG_PARSER_  
 #endif 
 
 static router_dev_t* g_router;
@@ -40,21 +40,21 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	printf("cmd:%s, data:%s\n", cmd, data);
 #endif
 
-	if (start_with(cmd, "search"))			
+	if (start_with(cmd, "set_router_search"))			
 	{
 		router_id_t id;
 
 		sscanf(data, "%[^:]%*c%s", id.id, id.data);
 		return g_router->search(&id, context);
 	}
-	else if(start_with(cmd, "set_wan_config"))
+	else if(start_with(cmd, "set_router_wan"))
 	{
 		router_wan_t wan_config;
 		
 		sscanf(data, "%[^:]%*c%s", wan_config.key, wan_config.name);
 		return g_router->wan_config(&wan_config, context);
 	}
-	else if(start_with(cmd, "set_wifi_config"))
+	else if(start_with(cmd, "set_router_wifi"))
 	{
 		router_wifi_t wifi_config;
 		
@@ -63,11 +63,15 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	}
 	else if(start_with(cmd, "set_router_reboot"))
 	{
-		return g_router->reboot();
+		return g_router->reboot(context);
 	}
 	else if(start_with(cmd, "set_router_reset"))
 	{
-		return g_router->reset();
+		return g_router->reset(context);
+	}
+	else
+	{
+		return -1;
 	}
 }
 
@@ -106,7 +110,7 @@ int parser_init(void)
 /**
 int main(int argc, char *argv[])  
 {  
-	char str[]="UBoxV002:search:search_box;id:172.18.8.21";  
+	char str[]="UBoxV002:set:set_router_search;id:172.18.8.21";  
 	char *ptr, *tmp;  
 	char context[1024];
 

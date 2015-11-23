@@ -55,7 +55,7 @@ void loop(int sock)
 		memset(recvbuf,  0,  sizeof(recvbuf));
 		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
 #ifdef _DEBUG_MAIN_
-		printf("%s\n", recvbuf);
+		printf("recv:%s\n", recvbuf);
 #endif
 
 		if(n == -1)
@@ -65,14 +65,21 @@ void loop(int sock)
 				continue;
 			}
 		}
-		else if(n >  0)
+		else if (n >  0)
 		{
-			if(start_with(recvbuf, "UBoxV002"))
+			if (start_with(recvbuf, "UBoxV002"))
 			{
-				if(parser_cmd(recvbuf, sendbuf) == 0) 
+				if (parser_cmd(recvbuf, sendbuf) == 0) 
 				{
 //response to client, send	
+#ifdef _DEBUG_MAIN_
+					printf("sendbuf:%s\n", sendbuf);
+#endif
 					sendto(sock, sendbuf, strlen(sendbuf),  0, (struct sockaddr *)&recvaddr, recvlen);
+				}
+				else
+				{
+					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
 				}
 				continue;
 			}

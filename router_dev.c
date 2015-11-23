@@ -11,27 +11,56 @@
 #include "router_dev.h"
 #include "parser.h"
 
+#ifndef _DEBUG_ROUTER_DEV_
+#define _DEBUG_ROUTER_DEV_
+#endif
+
 //相关接口封装
 //router reboot;1:success, 0:failed
-static int router_reboot(void)
+static int router_reboot(void* context)
 {
+#ifdef _DEBUG_ROUTER_DEV_
 	printf("%s\n", __FUNCTION__);
+#endif
+	if (context == NULL)
+	{
+		return -1;
+	}
+
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "1");
+
 	return 0;
 }
 
 //router reset
-static int router_reset(void)
+static int router_reset(void* context)
 {
+	if (context == NULL)
+	{
+		return -1;
+	}
+#ifdef _DEBUG_ROUTER_DEV_
 	printf("%s\n", __FUNCTION__);
+#endif
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "1");
+
 	return 0;
 }
 
 //router search 
 static int router_search(router_id_t *id, void* context)
 {
+#ifdef _DEBUG_ROUTER_DEV_
 	printf("%s\n", __FUNCTION__);
+#endif
+
 	char* ptr = (char*)context;
 	char str[] = "\{\"IP\":\"172.18.8.1\",\"version\":\"3.4.6.6\",\"wifi_name\":\"DTVOS\",\"lan_mac\":\"112233445566\",\"wan_mac\":\"112233445566\"}\n";
+
+	if (context == NULL)
+	{
+		return -1;
+	}
 
 	if (ptr)
 	{
@@ -44,14 +73,32 @@ static int router_search(router_id_t *id, void* context)
 //wan config
 static int set_wan_config(router_wan_t *config, void* context)
 {
+#ifdef _DEBUG_ROUTER_DEV_
 	printf("%s\n", __FUNCTION__);
+#endif
+	if(context == NULL)
+	{
+		return -1;
+	}
+
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "1");
+
 	return 0;
 }
 
 //wifi config
 static int set_wifi_config(router_wifi_t *config, void* context)
 {
+#ifdef _DEBUG_ROUTER_DEV_
 	printf("%s\n", __FUNCTION__);
+#endif
+	if (context == NULL)
+	{
+		return -1;
+	}
+
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "1");
+
 	return 0;
 }
 

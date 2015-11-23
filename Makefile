@@ -6,7 +6,7 @@ obj := parser
 all: $(obj) 
 #test_rbtree
 
-$(obj): parser.o router_dev.o
+$(obj): parser.o router_dev.o main.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
 clean:

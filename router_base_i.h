@@ -21,6 +21,7 @@ typedef struct {
 	char id[DEFAULT_LENGTH];
 	char data[DEFAULT_LENGTH];
 } router_id_t;
+
 //router_info
 typedef struct {
 #define INFO_LENGTH 64
@@ -31,11 +32,24 @@ typedef struct {
 	char wan_man[INFO_LENGTH];
 } router_info_t;
 
-//dial config
+//pppoe config
 typedef struct {
 	char name[DEFAULT_LENGTH];
 	char key[DEFAULT_LENGTH];
-} router_wan_t;
+} router_wan_pppoe_t;
+
+//dhcp config
+typedef struct {
+	char cmd[DEFAULT_LENGTH];
+} router_wan_dhcp_t;
+
+//dhcp config
+typedef struct {
+	char ip[DEFAULT_LENGTH];
+	char mask[DEFAULT_LENGTH];
+	char getway[DEFAULT_LENGTH];
+	char dns[DEFAULT_LENGTH];
+} router_wan_ip_t;
 
 //router status
 typedef struct {

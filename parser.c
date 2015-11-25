@@ -52,12 +52,24 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		sscanf(data, "%[^:]%*c%s", id.id, id.data);
 		return g_router->search(&id, context);
 	}
-	else if(start_with(cmd, "set_router_wan"))
+	else if(start_with(cmd, "set_router_wanPPPOE"))
 	{
-		router_wan_t wan_config;
+		router_wan_pppoe_t wan_configPPPOE;
 		
-		sscanf(data, "%[^:]%*c%s", wan_config.key, wan_config.name);
-		return g_router->wan_config(&wan_config, context);
+		sscanf(data, "%[^:]%*c%s", wan_configPPPOE.key, wan_configPPPOE.name);
+		return g_router->wan_config(&wan_configPPPOE, context);
+	}
+	else if(start_with(cmd, "set_router_wanIP"))
+	{
+		router_wan_ip_t wan_configIP;
+		
+		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", wan_configIP.ip, wan_configIP.mask, 
+			wan_configIP.getway, wan_configIP.dns);
+		return g_router->wan_config(&wan_configIP, context);
+	}
+	else if(start_with(cmd, "set_router_wanDHCP"))
+	{
+		return g_router->wan_config(data, context);
 	}
 	else if(start_with(cmd, "set_router_wifi"))
 	{

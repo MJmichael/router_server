@@ -75,7 +75,7 @@ void loop(int sock)
 #ifdef _DEBUG_MAIN_
 					printf("sendbuf:%s\n", sendbuf);
 #endif
-					sendto(sock, sendbuf, strlen(sendbuf),  0, (struct sockaddr *)&recvaddr, recvlen);
+					sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 				}
 				else
 				{

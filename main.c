@@ -88,8 +88,23 @@ void loop(int sock)
 	close(sock);
 }
 
+
 int main(int argc, char* argv[]) 
 { 
+	pid_t pid;
+
+//switch ourself to background;
+	pid = fork();
+
+	switch(pid) {
+		case -1:
+			perror("fork/getpid");
+			exit(1);
+		case 0:
+			break;
+		default:
+			exit(0);
+	}
 //1.init
     parser_init();
 

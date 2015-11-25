@@ -94,8 +94,9 @@ static int handle_cmd(char cmd[], char data[], void* context)
 
 int parser_cmd(char buf[], void* context)
 {
-	char *ptr, *tmp;
+	char *ptr, *tmp, tmpbuf[1024];
 	router_cmd_t cmd;
+	int ret;
 
 	ptr = strtok_r(buf, ";", &tmp);
 	sscanf(ptr,"%[^:]%*c%[^:]%*c%s", cmd.version, cmd.cmd, cmd.cmd_i);
@@ -104,7 +105,10 @@ int parser_cmd(char buf[], void* context)
 	printf("version:%s, cmd:%s, cmd_i:%s\n", cmd.version, cmd.cmd, cmd.cmd_i);
 #endif
 
-	return handle_cmd(cmd.cmd_i, tmp, context);
+	ret = handle_cmd(cmd.cmd_i, tmp, tmpbuf);
+	sprintf((char*)context, "%s;%s", ptr, tmpbuf);
+
+	return ret;
 }
 
 int parser_init(void)

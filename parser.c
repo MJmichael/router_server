@@ -106,7 +106,8 @@ int parser_cmd(char buf[], void* context)
 #endif
 
 	ret = handle_cmd(cmd.cmd_i, tmp, tmpbuf);
-	sprintf((char*)context, "%s;%s", ptr, tmpbuf);
+//fix me; may be should return response
+	sprintf((char*)context, "%s:%s:%s;%s", cmd.version, "response", cmd.cmd_i, tmpbuf);
 
 	return ret;
 }

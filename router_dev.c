@@ -32,7 +32,7 @@
 static int cmd_get(char cmd[], void* context)
 {
 #define MAXLINE 1024
-	char result_buf[MAXLINE], command[MAXLINE];
+	char result_buf[MAXLINE];
 	FILE *fp;
 
 	fp = popen(cmd, "r");
@@ -53,7 +53,7 @@ static int cmd_get(char cmd[], void* context)
 			result_buf[strlen(result_buf)-1] = '\0';
 		}
 #ifdef _DEBUG_ROUTER_DEV_
-		printf("command %s, result_buf %s\r\n", command, result_buf);
+		printf("command %s, result_buf %s\r\n", cmd, result_buf);
 #endif
 		memcpy(context, result_buf, strlen(result_buf));
 	}
@@ -137,6 +137,7 @@ static int router_reset(void* context)
 //router search 
 static int router_search(router_id_t *id, void* context)
 {
+	char* ptr = (char*)context;
 	//default ip mask getway
 	char def_ip_addr[CONTEXT] = { 0 };
 	char def_subnet_mask[CONTEXT] = { 0 };
@@ -154,10 +155,6 @@ static int router_search(router_id_t *id, void* context)
 	char repeater_enabled0[CONTEXT] = { 0 };
 	char repeater_enabled1[CONTEXT] = { 0 };
 
-	char* ptr = (char*)context;
-
-	//	char str[] = "\{\"IP\":\"172.18.8.1\",\"version\":\"3.4.6.6\",\"wifi_name\":\"DTVOS\",\"lan_mac\":\"112233445566\",\"wan_mac\":\"112233445566\"}\n";
-
 	if ((context == NULL) || (context == NULL))
 	{
 		return -1;
@@ -167,21 +164,21 @@ static int router_search(router_id_t *id, void* context)
 	DEBUG_WARN("%s\n", __FUNCTION__);
 #endif
 
-	if ((cmd_get("flash get DEF_IP_ADDR;", (void*)def_ip_addr) < 0))
+	if ((cmd_get("flash get IP_ADDR;", (void*)def_ip_addr) < 0))
 	{
-		DEBUG_ERR("flash get DEF_IP_ADDR error\n");
+		DEBUG_ERR("flash get IP_ADDR error\n");
 		return(-1);
 	}
 
-	if ((cmd_get("flash get DEF_SUBNET_MASK;", (void*)def_subnet_mask) < 0))
+	if ((cmd_get("flash get SUBNET_MASK;", (void*)def_subnet_mask) < 0))
 	{
-		DEBUG_ERR("flash get DEF_SUBNET_MASK error\n");
+		DEBUG_ERR("flash get SUBNET_MASK error\n");
 		return(-1);
 	}
 
-	if ((cmd_get("flash get DEF_DEFAULT_GATEWA;", (void*)def_default_getway) < 0))
+	if ((cmd_get("flash get DEFAULT_GATEWAY;", (void*)def_default_getway) < 0))
 	{
-		DEBUG_ERR("flash get DEF_DEFAULT_GATEWA error\n");
+		DEBUG_ERR("flash get DEFAULT_GATEWAY error\n");
 		return(-1);
 	}
 	//wan lan mac
@@ -225,7 +222,7 @@ static int router_search(router_id_t *id, void* context)
 	sprintf(ptr, "\{\"IP\":\"%s\",\"version\":\"3.4.6.7\",\"lan_mac\":\"%s\",\"wan_mac\":\"%s\"}",
 			def_ip_addr, hw_nic0_addr, hw_nic1_addr);
 #ifdef _DEBUG_ROUTER_DEV_
-DEBUG_ERR(ptr);
+	DEBUG_ERR(ptr);
 #endif
 
 return 0;

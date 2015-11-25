@@ -57,7 +57,7 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		router_wan_pppoe_t wan_configPPPOE;
 		
 		sscanf(data, "%[^:]%*c%s", wan_configPPPOE.key, wan_configPPPOE.name);
-		return g_router->wan_config(&wan_configPPPOE, context);
+		return g_router->wan_config_pppoe(&wan_configPPPOE, context);
 	}
 	else if(start_with(cmd, "set_router_wanIP"))
 	{
@@ -65,11 +65,11 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		
 		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", wan_configIP.ip, wan_configIP.mask, 
 			wan_configIP.getway, wan_configIP.dns);
-		return g_router->wan_config(&wan_configIP, context);
+		return g_router->wan_config_ip(&wan_configIP, context);
 	}
 	else if(start_with(cmd, "set_router_wanDHCP"))
 	{
-		return g_router->wan_config(data, context);
+		return g_router->wan_config_dhcp((router_wan_dhcp_t*)data, context);
 	}
 	else if(start_with(cmd, "set_router_wifi"))
 	{

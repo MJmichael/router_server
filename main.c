@@ -16,6 +16,12 @@
 #define _DEBUG_MAIN_
 #endif
 
+#ifdef _DEBUG_MAIN_
+#define DEBUG_WARN(format, ...) printf(format, __VA_ARGS__)
+#else
+#define DEBUG_WARN(format, ...)
+#endif
+
 #define ERR_EXIT(m) \
     do { \
         perror(m); \
@@ -35,7 +41,7 @@ void loop(int sock)
 //bind
     if (bind(sock, (struct sockaddr *)&servaddr,  sizeof(servaddr)) <  0) 
     {
-        ERR_EXIT( "bind error"); 
+        ERR_EXIT( "Bind Error!");
     }   
 
 //for recv udp broadcast  
@@ -55,7 +61,7 @@ void loop(int sock)
 		memset(recvbuf,  0,  sizeof(recvbuf));
 		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
 #ifdef _DEBUG_MAIN_
-		printf("recv:%s\n", recvbuf);
+		DEBUG_WARN("recv:%s\n", recvbuf);
 #endif
 
 		if(n == -1)
@@ -73,7 +79,7 @@ void loop(int sock)
 				{
 //response to client, send	
 #ifdef _DEBUG_MAIN_
-					printf("sendbuf:%s\n", sendbuf);
+					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif
 					sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 				}
@@ -93,7 +99,7 @@ int main(int argc, char* argv[])
 { 
 	pid_t pid;
 
-//switch ourself to background;
+//throw ourself to background;
 	pid = fork();
 
 	switch(pid) {

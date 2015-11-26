@@ -15,6 +15,12 @@
 #define _DEBUG_ROUTER_DEV_
 #endif
 
+#ifdef _DEBUG_ROUTER_DEV_
+#define DEBUG_WARN(m, ...) printf(m, __VA_ARGS__)
+#else
+#define DEBUG_WARN(m, ...)
+#endif
+
 #ifdef CONTEXT
 #undef CONTEXT
 #define CONTEXT 1024
@@ -27,12 +33,11 @@
 		perror(m); \
 	} while(0); 
 
-#define DEBUG_WARN printf
 
 static int cmd_get(char cmd[], void* context)
 {
 #define MAXLINE 1024
-	char result_buf[MAXLINE];
+	char result_buf[MAXLINE], result_head[MAXLINE], result[MAXLINE];
 	FILE *fp;
 
 	fp = popen(cmd, "r");
@@ -55,7 +60,8 @@ static int cmd_get(char cmd[], void* context)
 #ifdef _DEBUG_ROUTER_DEV_
 		printf("command %s, result_buf %s\r\n", cmd, result_buf);
 #endif
-		memcpy(context, result_buf, strlen(result_buf));
+		sscanf(result_buf, "%[^=]%*c%s", result_head, result);
+		memcpy(context, result, strlen(result));
 	}
 
 	//close fp
@@ -275,6 +281,7 @@ static int set_wan_dhcp(router_wan_dhcp_t *config, void* context)
 	}
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
+	return 0;
 }
 
 //wan config static IP WAN_DHCP:0\2
@@ -300,6 +307,7 @@ static int set_wan_ip(router_wan_ip_t *config, void* context)
 	}
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
+	return 0;
 }
 
 //wifi config
@@ -315,15 +323,32 @@ static int set_wifi_config(router_wifi_t *config, void* context)
 		return(-1);
 	}
 
-	sprintf(cmd0, "flash set WLAN0_SSID %s-5G; flash set WLAN0_ENCRYPT %s; flash set WLAN0_WPA_PSK %s", 
-			config->name, config->key_type, config->key);
+#ifdef _DEBUG_ROUTER_DEV_
+		DEBUG_WARN("config->type:%s\n", config->key_type);
+#endif
+// force key type 2;
+	if (strcmp(config->key_type, "None") == 0)
+	{
+		sprintf(cmd0, "flash set WLAN0_SSID %s-5G; flash set WLAN0_ENCRYPT 0; flash set WLAN0_WPA_PSK %s",
+				config->name, config->key);
 
-	sprintf(cmd1, "flash set WLAN1_SSID %s-2.4G; flash set WLAN1_ENCRYPT %s; flash set WLAN1_WPA_PSK %s", 
-			config->name, config->key_type, config->key);
+		sprintf(cmd1, "flash set WLAN1_SSID %s-2.4G; flash set WLAN1_ENCRYPT 0; flash set WLAN1_WPA_PSK %s",
+				config->name, config->key);
+	}
+	else
+	{
+		sprintf(cmd0, "flash set WLAN0_SSID %s-5G; flash set WLAN0_ENCRYPT 2; flash set WLAN0_WPA_PSK %s",
+				config->name, config->key);
+
+		sprintf(cmd1, "flash set WLAN1_SSID %s-2.4G; flash set WLAN1_ENCRYPT 2; flash set WLAN1_WPA_PSK %s",
+				config->name, config->key);
+	}
 
 	if ((cmd_set(cmd0, result) < 0) || cmd_set(cmd1, result))
 	{
+#ifdef _DEBUG_ROUTER_DEV_
 		DEBUG_ERR("flash default error\n");
+#endif
 		return(-1);
 	}
 

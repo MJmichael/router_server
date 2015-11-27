@@ -22,11 +22,49 @@
 #define DEBUG_WARN(format, ...)
 #endif
 
+#ifndef DEBUG_ERR
+#define DEBUG_ERR(m, ...) printf(format, __VA_ARGS__);
+#endif
+
 #define ERR_EXIT(m) \
     do { \
         perror(m); \
         exit(EXIT_FAILURE); \
     } while(0); 
+/**
+** server start, send udp broadcast: init;
+**/
+int server_init(void)
+{
+	int sock; 
+	struct sockaddr_in servaddr; 
+	char str[]="\{\"ServerInit\"}";
+	
+	memset(&servaddr,  0,  sizeof(servaddr)); 
+	servaddr.sin_family = AF_INET; 
+	servaddr.sin_port = htons(5188); 
+	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
+	if ((sock = socket(PF_INET, SOCK_DGRAM,  0)) <  0) 
+	{
+		DEBUG_ERR("socket");
+		return(-1);
+	}
+	
+	static int opt = 1;
+	int nb = 0;  
+  	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
+   	if(nb == -1)  
+    {  
+        DEBUG_ERR("error\n");
+        return(-1);  
+    } 
+
+	sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
+	close(sock);
+	return 0;
+}
+
 
 /**
 **  udp loop
@@ -111,18 +149,24 @@ int main(int argc, char* argv[])
 		default:
 			exit(0);
 	}
-//1.init
+
+//1. server init
+	if(server_init() < 0)
+	{
+		ERR_EXIT("ServerInit error\n");
+	}
+//2. parser init
     parser_init();
 
-//2.create sock
+//3. create server sock
     int sock; 
     
     if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
     {
-        ERR_EXIT( "socket error"); 
+        ERR_EXIT( "socket error\n"); 
     }
 
-//3.loop
+//4.loop
     loop(sock);   
 
     return 0; 

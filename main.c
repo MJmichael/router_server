@@ -61,7 +61,7 @@ void loop(int sock)
 		memset(recvbuf,  0,  sizeof(recvbuf));
 		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
 #ifdef _DEBUG_MAIN_
-		DEBUG_WARN("recv:%s\n", recvbuf);
+		DEBUG_WARN("Recv from %s:%s\n", inet_ntoa(recvaddr.sin_addr), recvbuf);
 #endif
 
 		if(n == -1)
@@ -93,7 +93,6 @@ void loop(int sock)
 	} while(1);
 	close(sock);
 }
-
 
 int main(int argc, char* argv[]) 
 { 

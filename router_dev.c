@@ -33,7 +33,6 @@
 		perror(m); \
 	} while(0); 
 
-
 static int cmd_get(char cmd[], void* context)
 {
 #define MAXLINE 1024

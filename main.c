@@ -17,13 +17,13 @@
 #endif
 
 #ifdef _DEBUG_MAIN_
-#define DEBUG_WARN(format, ...) printf(format, __VA_ARGS__)
+#define DEBUG_WARN(m, ...) printf(m, __VA_ARGS__)
 #else
-#define DEBUG_WARN(format, ...)
+#define DEBUG_WARN(m, ...)
 #endif
 
 #ifndef DEBUG_ERR
-#define DEBUG_ERR(m, ...) printf(format, __VA_ARGS__);
+#define DEBUG_ERR(m) printf(m)
 #endif
 
 #define ERR_EXIT(m) \

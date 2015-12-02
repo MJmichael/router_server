@@ -56,7 +56,7 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	{
 		router_wan_pppoe_t wan_configPPPOE;
 		
-		sscanf(data, "%[^:]%*c%s", wan_configPPPOE.key, wan_configPPPOE.name);
+		sscanf(data, "%[^:]%*c%s", wan_configPPPOE.name, wan_configPPPOE.key);
 		return g_router->wan_config_pppoe(&wan_configPPPOE, context);
 	}
 	else if(start_with(cmd, "set_router_wanIP"))

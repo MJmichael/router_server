@@ -8,6 +8,8 @@
 #include <sys/socket.h> 
 #include <netinet/in.h> 
 #include <arpa/inet.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
 #include "router_dev.h"
 #include "parser.h"
@@ -29,23 +31,96 @@
 #define ERR_EXIT(m) \
     do { \
         perror(m); \
-        exit(EXIT_FAILURE); \
-    } while(0); 
+		exit(EXIT_FAILURE); \
+	} while(0); 
+
+#if 0
+static int get_broadcast_addr(char* addr)
+{
+	int inet_sock;
+	struct ifreq ifr;
+
+	bzero(&ifr, sizeof(ifr));
+	inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	/**
+	  strcpy(ifr.ifr_name, "eth0");
+	  if (ioctl(inet_sock, SIOCGIFADDR, &ifr) < 0)
+	  {
+	  perror("ioctl");
+	  return -1;
+	  }
+	  printf("host:%s\n", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
+	//获得广播地址
+	 **/
+/**
+	bzero(&ifr, sizeof(ifr));
+	strcpy(ifr.ifr_name, "br0");
+	if (ioctl(inet_sock, SIOCGIFBRDADDR, &ifr) < 0)
+	{
+		perror("ioctl");
+		return -1;
+	}
+**/
+
+	bzero(&ifr, sizeof(ifr));
+	strcpy(ifr.ifr_name, "br0");
+	if (ioctl(inet_sock, SIOCGIFFLAGS, &ifr) < 0)
+	{
+		perror("ioctl");
+		return -1;
+	}
+
+	return(ifr.ifr_flags & IFF_UP ? 1 : 0);
+//	get_broadcast_addr(addr);
+//	sprintf(addr, "%s", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
+//	printf("broadcast:%s\n", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
+//  return 0;
+}
+#else
+static int get_host_status(const char* addr)
+{
+	int inet_sock;
+	struct ifreq ifr;
+
+	bzero(&ifr, sizeof(ifr));
+	inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	bzero(&ifr, sizeof(ifr));
+	strcpy(ifr.ifr_name, addr);
+	if (ioctl(inet_sock, SIOCGIFFLAGS, &ifr) < 0)
+	{
+		perror("ioctl");
+		return -1;
+	}
+
+	return(ifr.ifr_flags & IFF_UP ? 1 : 0);
+}
+#endif
+
 /**
 ** server start, send udp broadcast: init;
 **/
 int server_init(void)
 {
-	int sock; 
 	struct sockaddr_in servaddr; 
-	char str[]="\{\"ServerInit\"}";
+	int sock; 
+	char str[]="UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
+	char addr[1024];
 	
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(5188); 
 	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
-	if ((sock = socket(PF_INET, SOCK_DGRAM,  0)) <  0) 
+	do
+	{
+#ifdef _DEBUG_MAIN_
+		DEBUG_ERR("Wait for eth0 up\n");
+#endif
+		usleep(1000);
+	} while(get_host_status("eth0") == 0);
+
+	if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) <  0) 
 	{
 		DEBUG_ERR("socket");
 		return(-1);
@@ -65,35 +140,36 @@ int server_init(void)
 	return 0;
 }
 
-
 /**
-**  udp loop
-**/
+ **  udp loop
+ **/
 void loop(int sock) 
 { 
-    struct sockaddr_in servaddr; 
-    memset(&servaddr,  0,  sizeof(servaddr)); 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(5188); 
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-//bind
-    if (bind(sock, (struct sockaddr *)&servaddr,  sizeof(servaddr)) <  0) 
-    {
-        ERR_EXIT( "Bind Error!");
-    }   
+	struct sockaddr_in servaddr; 
+	memset(&servaddr,  0,  sizeof(servaddr)); 
+	servaddr.sin_family = AF_INET; 
+	servaddr.sin_port = htons(5188); 
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 
-//for recv udp broadcast  
-    struct sockaddr_in recvaddr;  
-    
-    bzero(&recvaddr, sizeof(struct sockaddr_in));
-    recvaddr.sin_family = AF_INET;  
-    recvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    recvaddr.sin_port = htons(5188);
-     
-    char recvbuf[1024] = {0}, sendbuf[1024]; 
-    int n;
-    socklen_t recvlen; 
-     
+	// create server sock
+	//bind
+	if (bind(sock, (struct sockaddr *)&servaddr,  sizeof(servaddr)) <  0) 
+	{
+		ERR_EXIT( "Bind Error!");
+	}   
+
+	//for recv udp broadcast  
+	struct sockaddr_in recvaddr;  
+
+	bzero(&recvaddr, sizeof(struct sockaddr_in));
+	recvaddr.sin_family = AF_INET;  
+	recvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	recvaddr.sin_port = htons(5188);
+
+	char recvbuf[1024] = {0}, sendbuf[1024]; 
+	int n;
+	socklen_t recvlen; 
+
 	do {
 		recvlen = sizeof(recvaddr);
 		memset(recvbuf,  0,  sizeof(recvbuf));
@@ -108,6 +184,7 @@ void loop(int sock)
 			{
 				continue;
 			}
+			break;
 		}
 		else if (n >  0)
 		{
@@ -115,7 +192,7 @@ void loop(int sock)
 			{
 				if (parser_cmd(recvbuf, sendbuf) == 0) 
 				{
-//response to client, send	
+					//response to client, send	
 #ifdef _DEBUG_MAIN_
 					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif
@@ -129,7 +206,7 @@ void loop(int sock)
 			}
 		}
 	} while(1);
-	close(sock);
+
 }
 
 int main(int argc, char* argv[]) 
@@ -149,24 +226,31 @@ int main(int argc, char* argv[])
 			exit(0);
 	}
 
-//1. server init
-	if(server_init() < 0)
-	{
-		ERR_EXIT("ServerInit error\n");
-	}
-//2. parser init
+//1. parser init
     parser_init();
 
-//3. create server sock
-    int sock; 
-    
-    if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        ERR_EXIT( "socket error\n"); 
-    }
+//2. create server sock and loop
+	int sock; 
 
-//4.loop
-    loop(sock);   
+	do
+	{
+		//server init
+		if(server_init() < 0)
+		{
+			ERR_EXIT("ServerInit error\n");
+		}
 
-    return 0; 
+		if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
+		{
+			ERR_EXIT( "socket error\n"); 
+		}
+
+		//loop
+		loop(sock);   
+
+		close(sock);
+	} while(1);
+
+// fix me;
+	return 0; 
 }

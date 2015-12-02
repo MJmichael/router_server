@@ -33,10 +33,31 @@
 		perror(m); \
 	} while(0); 
 
+static int omit_char(const char src[], char c, char* dst)
+{
+	char *p_pos = src;
+
+	do
+	{
+		if (*p_pos == c)
+		{
+			*p_pos++;
+		}
+		else
+		{
+			*dst++ = *p_pos++;
+		}
+	} while(*p_pos !='\0');
+
+	*dst = '\0';
+
+	return 0;
+}
+
 static int cmd_get(char cmd[], void* context)
 {
 #define MAXLINE 1024
-	char result_buf[MAXLINE], result_head[MAXLINE], result[MAXLINE];
+	char result_buf[MAXLINE], result_head[MAXLINE], result[MAXLINE], dst[MAXLINE];
 	FILE *fp;
 
 	fp = popen(cmd, "r");
@@ -56,11 +77,14 @@ static int cmd_get(char cmd[], void* context)
 		{
 			result_buf[strlen(result_buf)-1] = '\0';
 		}
+		sscanf(result_buf, "%[^=]%*c%100[^/;]", result_head, result);
 #ifdef _DEBUG_ROUTER_DEV_
-		printf("command %s, result_buf %s\r\n", cmd, result_buf);
+		printf("command %s, result_buf %s, result %s\r\n", cmd, result_buf, result);
 #endif
-		sscanf(result_buf, "%[^=]%*c%s", result_head, result);
-		memcpy(context, result, strlen(result));
+		char c ='\\';
+		omit_char(result, c, dst);
+
+		memcpy(context, dst, strlen(dst));
 	}
 
 	//close fp
@@ -109,6 +133,7 @@ static int router_reboot(void* context)
 		DEBUG_ERR("router reboot error\n");
 		return(-1);
 	}
+	//run_init_script("all");
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 
@@ -133,6 +158,9 @@ static int router_reset(void* context)
 		DEBUG_ERR("flash default error\n");
 		return(-1);
 	}
+
+//all init
+	run_init_script("all");
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 
@@ -159,6 +187,14 @@ static int router_search(router_id_t *id, void* context)
 	//repeat status
 	char repeater_enabled0[CONTEXT] = { 0 };
 	char repeater_enabled1[CONTEXT] = { 0 };
+
+	//wifi name
+	char wifi_name[CONTEXT] = { 0 };
+	char wifi_key[CONTEXT] = { 0 };
+
+	//ppp name
+	char ppp_name[CONTEXT] = { 0 };
+	char ppp_key[CONTEXT] = { 0 };
 
 	if ((context == NULL) || (context == NULL))
 	{
@@ -223,9 +259,33 @@ static int router_search(router_id_t *id, void* context)
 		return(-1);
 	}
 
+	if ((cmd_get("flash get WLAN1_SSID;", (void*)wifi_name) < 0))
+	{
+		DEBUG_ERR("flash get WLAN1_SSID error\n");
+		return(-1);
+	}
+
+	if ((cmd_get("flash get WLAN1_WPA_PSK;", (void*)wifi_key) < 0))
+	{
+		DEBUG_ERR("flash get WLAN1_WPA_PSK error\n");
+		return(-1);
+	}
+
+	if ((cmd_get("flash get PPP_USER_NAME;", (void*)ppp_name) < 0))
+	{
+		DEBUG_ERR("flash get PPP_USER_NAME error\n");
+		return(-1);
+	}
+
+	if ((cmd_get("flash get PPP_PASSWORD;", (void*)ppp_key) < 0))
+	{
+		DEBUG_ERR("flash get PPP_PASSWORD error\n");
+		return(-1);
+	}
 	//combinate return string;
-	sprintf(ptr, "\{\"IP\":\"%s\",\"version\":\"3.4.6.7\",\"lan_mac\":\"%s\",\"wan_mac\":\"%s\"}",
-			def_ip_addr, hw_nic0_addr, hw_nic1_addr);
+	//combinate return string;
+	sprintf(ptr, "\{\"IP\":\"%s\",\"version\":\"3.4.6.7\",\"lan_mac\":\"%s\",\"wan_mac\":\"%s\",\"wifi_name\":%s,\"wifi_key\":%s,\"ppp_name\":%s,\"ppp_key\":%s}",
+			def_ip_addr, hw_nic0_addr, hw_nic1_addr, wifi_name, wifi_key, ppp_name, ppp_key);
 #ifdef _DEBUG_ROUTER_DEV_
 	DEBUG_ERR(ptr);
 #endif
@@ -255,6 +315,9 @@ static int set_wan_pppoe(router_wan_pppoe_t *config, void* context)
 		return(-1);
 	}
 
+// init all
+	run_init_script("all");
+
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 
 	return 0;
@@ -279,6 +342,9 @@ static int set_wan_dhcp(router_wan_dhcp_t *config, void* context)
 		return(-1);
 	}
 
+// init all
+	run_init_script("all");
+
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 	return 0;
 }
@@ -296,7 +362,7 @@ static int set_wan_ip(router_wan_ip_t *config, void* context)
 		return -1;
 	}
 
-	sprintf(cmd, "flash set WAN_DHCP 2; flash set WAN_IP_ADDR %s; flash set WAN_SUBNET_MASK %s; flash set WAN_DEFAULT_GATEWAY %s;flash set DNS1 %s;",
+	sprintf(cmd, "flash set WAN_DHCP 0; flash set WAN_IP_ADDR %s; flash set WAN_SUBNET_MASK %s; flash set WAN_DEFAULT_GATEWAY %s;flash set DNS1 %s;",
 			config->ip,  config->mask, config->getway, config->dns);
 
 	if (cmd_set(cmd, result) < 0)
@@ -304,6 +370,9 @@ static int set_wan_ip(router_wan_ip_t *config, void* context)
 		DEBUG_ERR("flash default error\n");
 		return(-1);
 	}
+
+// init all
+	run_init_script("all");
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 	return 0;
@@ -350,6 +419,9 @@ static int set_wifi_config(router_wifi_t *config, void* context)
 #endif
 		return(-1);
 	}
+
+// init all
+	run_init_script("all");
 
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 

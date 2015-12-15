@@ -54,7 +54,12 @@ typedef struct {
 //router status
 typedef struct {
 	int status;
-} route_status_t;
+} router_status_t;
+
+//router mac address
+typedef struct {
+	char mac[DEFAULT_LENGTH];
+} router_mac_t;
 
 //wifi config
 typedef struct {

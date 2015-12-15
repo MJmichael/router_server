@@ -120,6 +120,8 @@ int server_init(void)
 		usleep(1000);
 	} while(get_host_status("eth0") == 0);
 
+	system("route add -host 255.255.255.255 dev br0");
+
 	if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) <  0) 
 	{
 		DEBUG_ERR("socket");
@@ -137,6 +139,7 @@ int server_init(void)
 
 	sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 	close(sock);
+
 	return 0;
 }
 
@@ -206,7 +209,6 @@ void loop(int sock)
 			}
 		}
 	} while(1);
-
 }
 
 int main(int argc, char* argv[]) 

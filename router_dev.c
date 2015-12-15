@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "router_dev.h"
 #include "parser.h"
@@ -102,6 +103,11 @@ static int cmd_set(char cmd[], void* context)
 #endif
 		return(-1);
 	}
+
+#ifdef _DEBUG_ROUTER_DEV_
+	DEBUG_WARN("cmd_set:%s\n", cmd);
+#endif
+
 	if(system(cmd) < 0)
 	{
 		sprintf(context, "%s", "fail");
@@ -124,6 +130,7 @@ static int router_reboot(void* context)
 	{
 		return(-1);
 	}
+
 #ifdef _DEBUG_ROUTER_DEV_
 	DEBUG_WARN("%s\n", __FUNCTION__);
 #endif
@@ -282,15 +289,14 @@ static int router_search(router_id_t *id, void* context)
 		DEBUG_ERR("flash get PPP_PASSWORD error\n");
 		return(-1);
 	}
-	//combinate return string;
-	//combinate return string;
+	//combinate response info
 	sprintf(ptr, "\{\"IP\":\"%s\",\"version\":\"3.4.6.7\",\"lan_mac\":\"%s\",\"wan_mac\":\"%s\",\"wifi_name\":%s,\"wifi_key\":%s,\"ppp_name\":%s,\"ppp_key\":%s}",
 			def_ip_addr, hw_nic0_addr, hw_nic1_addr, wifi_name, wifi_key, ppp_name, ppp_key);
 #ifdef _DEBUG_ROUTER_DEV_
 	DEBUG_ERR(ptr);
 #endif
 
-return 0;
+	return 0;
 }
 
 //wan config pppoe WAN_DHCP:3
@@ -349,7 +355,138 @@ static int set_wan_dhcp(router_wan_dhcp_t *config, void* context)
 	return 0;
 }
 
-//wan config static IP WAN_DHCP:0\2
+#if 0
+int calc_mac(char* mac, void *context)                                                                                                                                       
+{
+	if ((mac == NULL) || (context == NULL))
+	{
+		return -1;
+	}
+
+	mac[3] += 0x10;
+	strcpy((char*)context, mac);
+
+	return 0;
+}
+#else
+int calc_mac(const unsigned char* mac, ...)
+{
+	va_list list;
+	int sum = 0;
+	char *context;
+
+	unsigned char *addr = mac;
+
+	if (mac == NULL)
+	{
+		return -1;
+	}
+
+	va_start(list, mac);
+
+	do {
+		addr[3] += 0x10;
+		context = va_arg(list, char*);
+
+		if(context)
+		{
+			strcpy(context, mac);
+		}
+	} while(context);
+
+	va_end(list);
+
+	return 0;
+}
+#endif
+
+//mac addr config
+static int set_mac_addr(router_mac_t *config, void* context)
+{
+	char result[64], cmd[128];
+	unsigned char mac0[6], mac1[6], mac2[6], mac3[6], mac4[6];
+	char mac_0[2], mac_1[2], mac_2[2], mac_3[2], mac_4[2], mac_5[2];
+	int ret;
+
+	if ((context == NULL) || (config == NULL))
+	{
+#ifdef _DEBUG_ROUTER_DEV_
+		DEBUG_ERR("set wan config error\n");
+#endif
+		return -1;
+	}
+
+#ifdef _DEBUG_ROUTER_DEV_
+	DEBUG_WARN("%s\n", config->mac);
+#endif
+
+	ret = sscanf(config->mac, "%02s%02s%02s%02s%02s%02s", mac_0, mac_1, mac_2, mac_3, mac_4, mac_5);
+
+	mac0[0] = strtol(mac_0, NULL, 16);
+	mac0[1] = strtol(mac_1, NULL, 16);
+	mac0[2] = strtol(mac_2, NULL, 16);
+	mac0[3] = strtol(mac_3, NULL, 16);
+	mac0[4] = strtol(mac_4, NULL, 16);
+	mac0[5] = strtol(mac_5, NULL, 16);
+
+	calc_mac(mac0, mac1, mac2, mac3, mac4, NULL);
+
+#ifdef _DEBUG_ROUTER_DEV_
+	DEBUG_WARN("%02x,%02x,%02x,%02x,%02x,%02x\n", mac0[0], mac0[1], mac0[2], mac0[3], mac0[4], mac0[5]);
+	DEBUG_WARN("%02x,%02x,%02x,%02x,%02x,%02x\n", mac1[0], mac1[1], mac1[2], mac1[3], mac1[4], mac1[5]);
+	DEBUG_WARN("%02x,%02x,%02x,%02x,%02x,%02x\n", mac2[0], mac2[1], mac2[2], mac2[3], mac2[4], mac2[5]);
+	DEBUG_WARN("%02x,%02x,%02x,%02x,%02x,%02x\n", mac3[0], mac3[1], mac3[2], mac3[3], mac3[4], mac3[5]);
+	DEBUG_WARN("%02x,%02x,%02x,%02x,%02x,%02x\n", mac4[0], mac4[1], mac4[2], mac4[3], mac4[4], mac4[5]);
+#endif
+
+// eth0	
+	sprintf(cmd, "flash set HW_NIC0_ADDR %02x%02x%02x%02x%02x%02x;", mac1[0], mac1[1], mac1[2], mac1[3], mac1[4], mac1[5]);
+	if (cmd_set(cmd, result) < 0)
+	{
+#ifdef _DEBUG_ROUTER_DEV_
+		DEBUG_ERR("flash default error\n");
+#endif
+		return(-1);
+	}
+
+// eth1
+	sprintf(cmd, "flash set HW_NIC1_ADDR %02x%02x%02x%02x%02x%02x;", mac2[0], mac2[1], mac2[2], mac2[3], mac2[4], mac2[5]);
+	if (cmd_set(cmd, result) < 0)
+	{
+#ifdef _DEBUG_ROUTER_DEV_
+		DEBUG_ERR("flash default error\n");
+#endif
+		return(-1);
+	}
+
+// wlan0
+	sprintf(cmd, "flash set HW_WLAN0_WLAN_ADDR %02x%02x%02x%02x%02x%02x;", mac3[0], mac3[1], mac3[2], mac3[3], mac3[4], mac3[5]);
+	if (cmd_set(cmd, result) < 0)
+	{
+#ifdef _DEBUG_ROUTER_DEV_
+		DEBUG_ERR("flash default error\n");
+#endif
+		return(-1);
+	}
+
+// wlan1
+	sprintf(cmd, "flash set HW_WLAN0_WLAN_ADDR %02x%02x%02x%02x%02x%02x;", mac4[0], mac4[1], mac4[2], mac4[3], mac4[4], mac4[5]);
+	if (cmd_set(cmd, result) < 0)
+	{
+#ifdef _DEBUG_ROUTER_DEV_
+		DEBUG_ERR("flash default error\n");
+#endif
+		return(-1);
+	}
+
+// init all
+	run_init_script("all");
+
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
+	return 0;
+}
+
+//wan config static IP WAN_DHCP:0
 static int set_wan_ip(router_wan_ip_t *config, void* context)
 {
 	char result[64], cmd[256];
@@ -444,6 +581,7 @@ void *router_dev_open(void)
 	router->wan_config_pppoe = set_wan_pppoe;
 	router->wan_config_ip = set_wan_ip;
 	router->wan_config_dhcp = set_wan_dhcp;
+	router->wan_config_mac = set_mac_addr;
 	router->wifi_config = set_wifi_config;
 
 	return (void*)router;

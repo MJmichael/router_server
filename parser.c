@@ -86,6 +86,15 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	{
 		return g_router->reset(context);
 	}
+	else if(start_with(cmd, "set_router_wanMAC"))
+	{
+		router_mac_t wifi_mac;
+		
+		printf("%s\n", data);
+		sscanf(data, "%s", wifi_mac.mac);
+		printf("%s\n", wifi_mac.mac);
+		return g_router->wan_config_mac(&wifi_mac, context);
+	}
 	else
 	{
 		return -1;

@@ -63,6 +63,8 @@ typedef struct {
 
 //wifi config
 typedef struct {
+	char wifiType1[DEFAULT_LENGTH];
+	char wifiType2[DEFAULT_LENGTH];
 	char name[DEFAULT_LENGTH];
 	char key_type[DEFAULT_LENGTH];
 	char key[DEFAULT_LENGTH];
@@ -77,5 +79,14 @@ typedef struct {
 typedef struct {
 	int reset;
 } router_reset_t;
+
+//router reoeater
+typedef struct {
+	char name[DEFAULT_LENGTH];
+	char channel[DEFAULT_LENGTH];
+	char key[DEFAULT_LENGTH];
+	char key_type[DEFAULT_LENGTH];
+} router_repeater_t;
+
 
 #endif

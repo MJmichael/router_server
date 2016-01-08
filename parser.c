@@ -52,6 +52,21 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		sscanf(data, "%[^:]%*c%s", id.id, id.data);
 		return g_router->search(&id, context);
 	}
+	else if(start_with(cmd,"get_router_repeater")){
+		return g_router->repeater_get(context);
+	}
+	else if(start_with(cmd,"set_router_wifiSearch")){
+		return g_router->wifi_search( context);
+	}
+	else if(start_with(cmd,"set_router_repeater")){
+		 router_repeater_t repeaterConfig;
+		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", repeaterConfig.name, repeaterConfig.channel, 
+			repeaterConfig.key, repeaterConfig.key_type);
+		return g_router->repeater_config( &repeaterConfig,context);
+	}
+	else if(start_with(cmd,"set_router_enrepeater")){
+		return g_router->enrepeater_config( context);
+	}
 	else if(start_with(cmd, "set_router_wanPPPOE"))
 	{
 		router_wan_pppoe_t wan_configPPPOE;
@@ -75,7 +90,7 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	{
 		router_wifi_t wifi_config;
 		
-		sscanf(data, "%[^:]%*c%[^:]%*c%s", wifi_config.name, wifi_config.key_type, wifi_config.key);
+		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%s",wifi_config.wifiType1, wifi_config.wifiType2,wifi_config.name, wifi_config.key_type, wifi_config.key);
 		return g_router->wifi_config(&wifi_config, context);
 	}
 	else if(start_with(cmd, "set_router_reboot"))
@@ -103,7 +118,7 @@ static int handle_cmd(char cmd[], char data[], void* context)
 
 int parser_cmd(char buf[], void* context)
 {
-	char *ptr, *tmp, tmpbuf[1024];
+	char *ptr, *tmp, tmpbuf[4096];
 	router_cmd_t cmd;
 	int ret;
 
@@ -116,7 +131,13 @@ int parser_cmd(char buf[], void* context)
 
 	ret = handle_cmd(cmd.cmd_i, tmp, tmpbuf);
 //fix me; may be should return response
-	sprintf((char*)context, "%s:%s:%s;%s", cmd.version, "response", cmd.cmd_i, tmpbuf);
+	if(tmpbuf != NULL){
+		sprintf((char*)context, "%s:%s:%s;%s", cmd.version, "response", cmd.cmd_i, tmpbuf);
+		printf("@@@@@@ send context = %s\n",context);
+	}else{
+		sprintf((char*)context, "%s:%s:%s;", cmd.version, "response", cmd.cmd_i);
+		printf("@@@@@@ send context = %s\n",context);
+	}
 
 	return ret;
 }

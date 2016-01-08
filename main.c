@@ -137,6 +137,7 @@ int server_init(void)
         return(-1);  
     } 
 
+        printf("@@@@@@ send str = %s\n",str);
 	sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 	close(sock);
 
@@ -169,7 +170,7 @@ void loop(int sock)
 	recvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	recvaddr.sin_port = htons(5188);
 
-	char recvbuf[1024] = {0}, sendbuf[1024]; 
+	char recvbuf[1024] = {0}, sendbuf[4096]; 
 	int n;
 	socklen_t recvlen; 
 
@@ -228,6 +229,7 @@ int main(int argc, char* argv[])
 			exit(0);
 	}
 
+//	formWlSiteSurvey(NULL, NULL, NULL);
 //1. parser init
     parser_init();
 

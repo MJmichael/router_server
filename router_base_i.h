@@ -87,6 +87,4 @@ typedef struct {
 	char key[DEFAULT_LENGTH];
 	char key_type[DEFAULT_LENGTH];
 } router_repeater_t;
-
-
 #endif

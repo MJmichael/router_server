@@ -76,8 +76,10 @@ static int getPid(char *filename)
 	char buff[100];
 	FILE *fp;
 
-	if ( stat(filename, &status) < 0)
+	if ( stat(filename, &status) < 0) {
 		return -1;
+	}
+
 	fp = fopen(filename, "r");
 	if (!fp) {
 		fprintf(stderr, "Read pid file error!\n");
@@ -97,12 +99,13 @@ static void run_init_script(char *arg)
 
 	snprintf(tmpBuf, MAX_MSG_BUFFER_SIZE, "%s/%s.pid", _DHCPD_PID_PATH, _DHCPD_PROG_NAME);
 	pid = getPid(tmpBuf);
-	if ( pid > 0)
+	if ( pid > 0) { 
 		kill(pid, SIGUSR1);
+	}
 
 	usleep(1000);
 
-	if (pid > 0){
+	if (pid > 0) {
 		system("killall -9 udhcpd 2> /dev/null");
 		system("rm -f /var/run/udhcpd.pid 2> /dev/null");
 	}
@@ -384,6 +387,7 @@ static int router_search(router_id_t *id, void* context)
 
 	return 0;
 }
+
 #if 1
 static int router_repeater_get(void* context)
 {
@@ -439,6 +443,7 @@ static int router_repeater_get(void* context)
 	}
 	return 0;
 }
+//iw get ext
 char WLAN_IF[20];
 static SS_STATUS_Tp pStatus=NULL;
 static SS_DEVICE_Tp deviceInfo = NULL;
@@ -453,6 +458,111 @@ static inline int iw_get_ext(int skfd,           /* Socket to the kernel */
 	/* Do the request */
     return(ioctl(skfd, request, pwrq));
 }
+
+#if 0 /* just for wlan test */
+int getWlJoinRequest(char *interface, pBssDscr pBss, unsigned char *res)
+{
+#ifndef NO_ACTION
+	int skfd=0;
+	struct iwreq wrq;
+
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	skfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if(skfd==-1)
+		return -1;
+	/* Get wireless name */
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	if ( iw_get_ext(skfd, interface, SIOCGIWNAME, &wrq) < 0)
+		/* If no wireless name : no wireless extensions */
+		return -1;
+
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	wrq.u.data.pointer = (caddr_t)pBss;
+	wrq.u.data.length = sizeof(BssDscr);
+
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	if (iw_get_ext(skfd, interface, SIOCGIWRTLJOINREQ, &wrq) < 0)
+		return -1;
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+
+	close( skfd );
+
+	*res = *(unsigned char *)&wrq.u.data.pointer[0];
+#else
+	return -1;
+#endif
+
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+int getWlJoinResult(char *interface, unsigned char *res)
+{
+	int skfd;
+	struct iwreq wrq;
+
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	skfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	/* Get wireless name */
+	if ( iw_get_ext(skfd, interface, SIOCGIWNAME, &wrq) < 0){
+		/* If no wireless name : no wireless extensions */
+		close( skfd );
+		return -1;
+	}
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	wrq.u.data.pointer = (caddr_t)res;
+	wrq.u.data.length = 1;
+
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	if (iw_get_ext(skfd, interface, SIOCGIWRTLJOINREQSTATUS, &wrq) < 0){
+		close( skfd );
+		return -1;
+	}
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	close( skfd );
+
+	return 0;
+}
+
+void Join_ssid(void)
+{
+	BssDscr dscr;
+	unsigned char res = 0;
+	int wait_time = 0;
+
+	dscr.bdBssId[0] = 0x1c;
+	dscr.bdBssId[1] = 0xfa;
+	dscr.bdBssId[2] = 0x68;
+	dscr.bdBssId[3] = 0x23;
+	dscr.bdBssId[4] = 0x01;
+	dscr.bdBssId[5] = 0x4c;
+
+//	dscr.bdType = 16;
+	dscr.ChannelNumber = 11;
+//	dscr.bdBrates = 15;
+
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+	getWlJoinRequest("wlan1", &dscr, &res);
+	printf("%s %d\n", __FUNCTION__, __LINE__);
+
+	while(1) {
+		if ( res == 1 ) { // wait
+			/*prolong join wait time for pocket ap*/
+			if (wait_time++ > 10)
+			{
+				goto ss_err;
+			}
+			sleep(1);
+			continue;
+		}
+		break;
+	}
+
+ss_err: 
+	printf("res:%d\n", res);
+}
+#endif
 
 static int getWlSiteSurveyRequestForRepeater(char *interface, int *pStatus)
 {

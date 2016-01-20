@@ -6,7 +6,7 @@ obj := server
 all: $(obj) 
 #test_rbtree
 
-$(obj): parser.o router_dev.o main.o
+$(obj): parser.o router_dev.o main.o utility.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
 
 clean:

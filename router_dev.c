@@ -1437,6 +1437,69 @@ static int set_wifi_config(router_wifi_t *config, void* context)
 	return 0;
 }
 
+#define FIRMWARE_NAME "fw.bin"
+int firmware_len=0;
+char *firmware_data;
+
+static int route_update_firmware(void)
+{
+	int fileLen = 0;
+	char *buff = NULL;
+	char tmpBuf[200];
+	char *submitUrl;
+	char lan_ip[30];	
+	char lan_ip_buf[30];
+	FILE *fd;
+	
+	struct stat fileStat = {0};
+	int readLen=0,i=0;
+	 if(!isFileExist(FIRMWARE_NAME))
+	 {
+		strcpy(tmpBuf, ("Error!form ware is not exist in usb storage!\n"));
+		goto ret_err;
+	 }
+	 stat(FIRMWARE_NAME,&fileStat);
+	 fileLen=fileStat.st_size;
+		 
+	fd = open(FIRMWARE_NAME, O_RDONLY);
+	if (!fd){
+		strcpy(tmpBuf, ("Open image file failed!\n"));
+		goto ret_err;
+	}
+	lseek(fd, 0L, SEEK_SET);
+	printf("<read image from mem device>\n");
+	
+	buff = malloc(fileLen + 17);
+	if(buff == NULL)
+	{
+		sprintf(tmpBuf, ("malloc %d failed !\n"),fileLen+17);
+		goto ret_err;
+	}
+	bzero(buff, fileLen+17);
+		
+	strcpy(buff,WINIE6_STR);
+	buff[13] = 0x0d;
+	buff[14] = 0x0a;
+	buff[15] = 0x0d;
+	buff[16] = 0x0a;
+		
+	readLen = read(fd, buff+17, fileLen);
+	if(readLen != fileLen)
+	{
+		sprintf(tmpBuf, ("read %d but file len is %d, read fail!\n"), readLen, fileLen);
+		goto ret_err;
+	}
+
+	firmware_data=buff;
+	firmware_len=fileLen+17;	
+
+	doFirmwareUpgrade(firmware_data, firmware_len, 0, tmpBuf);
+	return;
+ret_err:
+	ERR_MSG(tmpBuf);
+	return;	
+}
+
 //init router handle
 void *router_dev_open(void)
 {

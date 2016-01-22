@@ -212,9 +212,19 @@ void loop(int sock)
 	} while(1);
 }
 
+//Update module thread
+void* check_update_thread(void *args)
+{
+	do {
+		check_version(0, NULL);
+		sleep(60*60);
+	}while(1);
+}
+
 int main(int argc, char* argv[]) 
 { 
-	pid_t pid;
+	pid_t pid;    
+	pthread_t p_thread;
 
 //throw ourself to background;
 	pid = fork();
@@ -233,7 +243,10 @@ int main(int argc, char* argv[])
 //1. parser init
     parser_init();
 
-//2. create server sock and loop
+//2. Update thread
+    pthread_create(&p_thread, NULL, check_update_thread, NULL);
+
+//3. create server sock and loop
 	int sock; 
 
 	do

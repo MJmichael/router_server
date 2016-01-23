@@ -41,8 +41,9 @@ typedef struct {
 	int (*wan_config_mac)(router_mac_t*, void*);
 	int (*wan_config_dhcp)(router_wan_dhcp_t*, void*);
 	int (*wifi_config)(router_wifi_t*, void*);
+	int (*check_update)(router_version_t*, void*);
+	int (*update_firmware)(void*);
 } router_dev_t;
-
 
 void *router_dev_open(void);
 #endif

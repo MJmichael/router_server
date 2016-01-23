@@ -13,8 +13,12 @@
 #include "router_base_i.h"
 
 #ifndef _DEBUG_PARSER_
-#define _DEBUG_PARSER_  
+#define _DEBUG_PARSER_  printf
 #endif 
+
+#ifndef DEBUG_WARN
+#define DEBUG_WARN printf
+#endif
 
 static router_dev_t* g_router;
 
@@ -23,7 +27,7 @@ int start_with(char s1[], char s2[])
 #define UpperChar(c) (((c)>='a' && (c)<='z')?(c)+'A'-'a':(c))
 	int i;
 
-	for (i=0; s1[i]!='\0'&&s2[i]!='\0'; i++)
+	for (i=0; s1[i]!='\0' && s2[i]!='\0'; i++)
 	{
 		/*any different?*/
 		if (UpperChar(s1[i]) != UpperChar(s2[i])) 
@@ -42,7 +46,7 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		return -1;
 	}
 #ifdef _DEBUG_PARSER_
-	printf("cmd:%s, data:%s\n", cmd, data);
+	DEBUG_WARN("cmd:%s, data:%s\n", cmd, data);
 #endif
 
 	if (start_with(cmd, "set_router_search"))			
@@ -105,15 +109,22 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	{
 		router_mac_t wifi_mac;
 		
-		printf("%s\n", data);
+		DEBUG_WARN("%s\n", data);
 		sscanf(data, "%s", wifi_mac.mac);
-		printf("%s\n", wifi_mac.mac);
+		DEBUG_WARN("%s\n", wifi_mac.mac);
 		return g_router->wan_config_mac(&wifi_mac, context);
 	}
-	else
+	else if(start_with(cmd, "check_router_version"))
 	{
-		return -1;
+		return g_router->check_update(NULL, context);
 	}
+	else if(start_with(cmd, "set_router_update"))
+	{
+		return g_router->update_firmware(context);		
+	}
+
+//	default cmd error;return -1;
+	return (-1);
 }
 
 int parser_cmd(char buf[], void* context)
@@ -126,17 +137,17 @@ int parser_cmd(char buf[], void* context)
 	sscanf(ptr,"%[^:]%*c%[^:]%*c%s", cmd.version, cmd.cmd, cmd.cmd_i);
 
 #ifdef _DEBUG_PARSER_
-	printf("version:%s, cmd:%s, cmd_i:%s\n", cmd.version, cmd.cmd, cmd.cmd_i);
+	DEBUG_WARN("version:%s, cmd:%s, cmd_i:%s\n", cmd.version, cmd.cmd, cmd.cmd_i);
 #endif
 
 	ret = handle_cmd(cmd.cmd_i, tmp, tmpbuf);
 //fix me; may be should return response
 	if(tmpbuf != NULL){
 		sprintf((char*)context, "%s:%s:%s;%s", cmd.version, "response", cmd.cmd_i, tmpbuf);
-		printf("@@@@@@ send context = %s\n",context);
+		DEBUG_WARN("@@@@@@ send context = %s\n",context);
 	}else{
 		sprintf((char*)context, "%s:%s:%s;", cmd.version, "response", cmd.cmd_i);
-		printf("@@@@@@ send context = %s\n",context);
+		DEBUG_WARN("@@@@@@ send context = %s\n",context);
 	}
 
 	return ret;
@@ -148,15 +159,27 @@ int parser_init(void)
 
 	if(g_router == NULL)
 	{
-		printf("router device open failed\n");
+		DEBUG_WARN("router device open failed\n");
 		return -1;
 	}
 
 #ifdef _DEBUG_PARSER_
-	printf("router device open success\n");
+	DEBUG_WARN("router device open success\n");
 #endif
 	return 0;
 }
+
+int parser_term(void)
+{
+	if(g_router != NULL)
+	{
+		DEBUG_WARN("router device freen\n");
+		free(g_router);
+	}
+
+	return 0;
+}
+
 
 //main loop
 /**

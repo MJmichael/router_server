@@ -1350,7 +1350,7 @@ static int set_mac_addr(router_mac_t *config, void* context)
 	return 0;
 }
 
-//wan config static IP WAN_DHCP:0
+//Wan config static IP WAN_DHCP:0
 static int set_wan_ip(router_wan_ip_t *config, void* context)
 {
 	char result[64], cmd[256];
@@ -1441,11 +1441,12 @@ static int set_wifi_config(router_wifi_t *config, void* context)
 	return 0;
 }
 
-#define FIRMWARE_NAME "fw.bin"
-int firmware_len=0;
+//update firmware 
+#define FIRMWARE_NAME "/tmp/fw.bin"
+int firmware_len = 0;
 char *firmware_data;
 
-static int route_update_firmware(void)
+static int router_update_firmware(void* context)
 {
 	int fileLen = 0;
 	char *buff = NULL;
@@ -1476,32 +1477,62 @@ static int route_update_firmware(void)
 	buff = malloc(fileLen + 17);
 	if(buff == NULL)
 	{
-		sprintf(tmpBuf, ("malloc %d failed !\n"),fileLen+17);
+		sprintf(tmpBuf, ("malloc %d failed !\n"),fileLen + 17);
 		goto ret_err;
 	}
-	bzero(buff, fileLen+17);
+	bzero(buff, fileLen + 17);
 		
-	strcpy(buff,WINIE6_STR);
+	strcpy(buff, WINIE6_STR);
 	buff[13] = 0x0d;
 	buff[14] = 0x0a;
 	buff[15] = 0x0d;
 	buff[16] = 0x0a;
 		
-	readLen = read(fd, buff+17, fileLen);
+	readLen = read(fd, (buff + 17), fileLen);
 	if(readLen != fileLen)
 	{
 		sprintf(tmpBuf, ("read %d but file len is %d, read fail!\n"), readLen, fileLen);
 		goto ret_err;
 	}
 
-	firmware_data=buff;
-	firmware_len=fileLen+17;	
+	firmware_data = buff;
+	firmware_len = fileLen + 17;	
 
 	doFirmwareUpgrade(firmware_data, firmware_len, 0, tmpBuf);
-	return;
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "success");
+	return 0;
+	
 ret_err:
 	printf(tmpBuf);
-	return;	
+	return (-1);	
+}
+
+static int router_check_update(router_version_t *config, void* context)
+{
+	char result[1024];
+    FILE *fp;
+	
+	if (context == NULL)
+	{
+		return(-1);
+	}
+	
+#ifdef _DEBUG_ROUTER_DEV_
+	DEBUG_WARN("%s\n", __FUNCTION__);
+#endif
+	if((access("/tmp/fw.bin", F_OK) == 0) && (access("/tmp/version", F_OK) == 0))
+	{
+    	fp = fopen("/tmp/version", "r+");
+     	fgets(result, 1023, fp);
+     	fclose(fp);
+ 
+     	printf("buf:%s\n", result);
+		sprintf((char*)context, "\{\"STATUS\":\"%s\", \"version\":\"%s\"}", "success", result);
+	} else {
+		sprintf((char*)context, "\{\"STATUS\":\"%s\", \"version\":\"%s\"}", "fail", "-1");
+	}
+
+	return 0;
 }
 
 //init router handle
@@ -1526,6 +1557,8 @@ void *router_dev_open(void)
 	router->wan_config_dhcp = set_wan_dhcp;
 	router->wan_config_mac = set_mac_addr;
 	router->wifi_config = set_wifi_config;
-
+	router->check_update = router_check_update;
+	router->update_firmware = router_update_firmware;
+	
 	return (void*)router;
 }

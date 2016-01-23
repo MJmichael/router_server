@@ -87,4 +87,15 @@ typedef struct {
 	char key[DEFAULT_LENGTH];
 	char key_type[DEFAULT_LENGTH];
 } router_repeater_t;
+
+//router check update
+typedef struct {
+	char version[DEFAULT_LENGTH];
+} router_version_t;
+
+//router set update
+typedef struct {
+	int update;
+} router_update_t;
+
 #endif

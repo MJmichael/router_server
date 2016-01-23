@@ -28,6 +28,8 @@
 #define HOMEPAGE	"http://www.taixin.cn"
 
 #define VERSION_FILE "version"
+
+
 enum Status {
 	RET_OK,
 	RET_WARNING,

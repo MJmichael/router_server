@@ -56,6 +56,10 @@
 
 #define READ_BUF_SIZE	50
 
+#ifndef CONFIG_APP_TR069
+#define CONFIG_APP_TR069 1
+#endif
+
 /*-- Local routine declaration --*/
 static int get_dev_fields(int type, char *bp, struct user_net_device_stats *pStats);
 static char *get_name(char *name, char *p);

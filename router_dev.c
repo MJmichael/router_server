@@ -44,6 +44,10 @@
 #define CONTEXT 1024
 #endif
 
+#ifndef WINIE6_STR
+#define WINIE6_STR    "/octet-stream\x0d\x0a\0x0d\0x0a"
+#endif
+
 #define DEBUG_ERR(m) \
 	do { \
 		perror(m); \
@@ -1496,7 +1500,7 @@ static int route_update_firmware(void)
 	doFirmwareUpgrade(firmware_data, firmware_len, 0, tmpBuf);
 	return;
 ret_err:
-	ERR_MSG(tmpBuf);
+	printf(tmpBuf);
 	return;	
 }
 

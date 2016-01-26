@@ -39,7 +39,7 @@ int start_with(char s1[], char s2[])
 	return (s2[i] != '\0') ? 0 : 1;
 }
 
-static int handle_cmd(char cmd[], char data[], void* context)
+static int handle_cmd(char cmd[], char data[], int* router_init, DEVICE_TYPE_t type,  void* context)
 {
 	if (context == NULL)
 	{
@@ -52,86 +52,121 @@ static int handle_cmd(char cmd[], char data[], void* context)
 	if (start_with(cmd, "set_router_search"))			
 	{
 		router_id_t id;
+		*router_init = 0;
 
 		sscanf(data, "%[^:]%*c%s", id.id, id.data);
-		return g_router->search(&id, context);
+		return g_router->search(type, &id, context);
 	}
-	else if(start_with(cmd,"get_router_repeater"))
+	else if(start_with(cmd, "get_router_repeater"))
 	{
-		return g_router->repeater_get(context);
+		*router_init = 0;
+		return g_router->repeater_get(type, context);
 	}
-	else if(start_with(cmd,"set_router_wifiSearch"))
+	else if(start_with(cmd, "set_router_wifiSearch"))
 	{
-		return g_router->wifi_search( context);
+		*router_init = 0;
+		return g_router->wifi_search(type, context);
 	}
-	else if(start_with(cmd,"set_router_repeater"))
+	else if(start_with(cmd, "set_router_repeater"))
 	{
-		 router_repeater_t repeaterConfig;
+		router_repeater_t repeaterConfig;
+		*router_init = 1;
+		
 		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", repeaterConfig.name, repeaterConfig.channel, 
 			repeaterConfig.key, repeaterConfig.key_type);
-		return g_router->repeater_config( &repeaterConfig,context);
+		return g_router->repeater_config(type, &repeaterConfig, context);
 	}
-	else if(start_with(cmd,"set_router_enrepeater"))
+	else if(start_with(cmd, "set_router_enrepeater"))
 	{
-		return g_router->enrepeater_config( context);
+		*router_init = 1;
+		return g_router->enrepeater_config(type, context);
 	}
 	else if(start_with(cmd, "set_router_wanPPPOE"))
 	{
 		router_wan_pppoe_t wan_configPPPOE;
-		
-		sscanf(data, "%[^:]%*c%s", wan_configPPPOE.name, wan_configPPPOE.key);
-		return g_router->wan_config_pppoe(&wan_configPPPOE, context);
+		router_wifi_t wifi_config;
+		*router_init = 1;
+
+		if (type == BOXSET) {
+			sscanf(data, "%[^:]%*c%s", wan_configPPPOE.name, wan_configPPPOE.key);
+		} else if(type == PHONE) {
+			sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%s",
+				wan_configPPPOE.name, wan_configPPPOE.key,
+				wifi_config.wifiType1, wifi_config.wifiType2,wifi_config.name, wifi_config.key_type, wifi_config.key);			
+		}
+		return g_router->wan_config_pppoe(type, &wan_configPPPOE, &wifi_config, context);
 	}
 	else if(start_with(cmd, "set_router_wanIP"))
 	{
+		*router_init = 1;
 		router_wan_ip_t wan_configIP;
+		router_wifi_t wifi_config;
 		
-		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", wan_configIP.ip, wan_configIP.mask, 
-			wan_configIP.getway, wan_configIP.dns);
-		return g_router->wan_config_ip(&wan_configIP, context);
+		if(type == BOXSET) {
+			sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", wan_configIP.ip, wan_configIP.mask, 
+				wan_configIP.getway, wan_configIP.dns);
+		}else if(type == PHONE) {
+			sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%s", 
+				wan_configIP.ip, wan_configIP.mask, wan_configIP.getway, wan_configIP.dns,
+				wifi_config.wifiType1, wifi_config.wifiType2,wifi_config.name, wifi_config.key_type, wifi_config.key);
+		}
+		return g_router->wan_config_ip(type, &wan_configIP, &wifi_config, context);
 	}
 	else if(start_with(cmd, "set_router_wanDHCP"))
 	{
-		return g_router->wan_config_dhcp((router_wan_dhcp_t*)data, context);
+		*router_init = 1;
+		router_wifi_t wifi_config;
+		
+		if(type == PHONE) {
+				sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%s",
+				wifi_config.wifiType1, wifi_config.wifiType2,wifi_config.name, wifi_config.key_type, wifi_config.key);
+		}
+		return g_router->wan_config_dhcp((type, router_wan_dhcp_t*)data, &wifi_config, context);
 	}
 	else if(start_with(cmd, "set_router_wifi"))
 	{
 		router_wifi_t wifi_config;
+		*router_init = 1;
 		
 		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%s",wifi_config.wifiType1, wifi_config.wifiType2,wifi_config.name, wifi_config.key_type, wifi_config.key);
-		return g_router->wifi_config(&wifi_config, context);
+		return g_router->wifi_config(type, &wifi_config, context);
 	}
 	else if(start_with(cmd, "set_router_reboot"))
 	{
-		return g_router->reboot(context);
+		*router_init = 1;
+		
+		return g_router->reboot(type, context);
 	}
 	else if(start_with(cmd, "set_router_reset"))
 	{
-		return g_router->reset(context);
+		*router_init = 1;
+		
+		return g_router->reset(type, context);
 	}
 	else if(start_with(cmd, "set_router_wanMAC"))
 	{
 		router_mac_t wifi_mac;
+		*router_init = 1;
 		
 		DEBUG_WARN("%s\n", data);
 		sscanf(data, "%s", wifi_mac.mac);
 		DEBUG_WARN("%s\n", wifi_mac.mac);
-		return g_router->wan_config_mac(&wifi_mac, context);
+		return g_router->wan_config_mac(type, &wifi_mac, context);
 	}
 	else if(start_with(cmd, "get_router_update"))
 	{
-		return g_router->check_update(NULL, context);
+		return g_router->check_update(type, NULL, context);
 	}
 	else if(start_with(cmd, "set_router_update"))
 	{
-		return g_router->update_firmware(context);		
+		return g_router->update_firmware(type, context);		
 	}
 
 //	default cmd error;return -1;
 	return (-1);
 }
 
-int parser_cmd(char buf[], void* context)
+int parser_cmd(char buf[], DEVICE_TYPE_t type, int* router_init, void* context)
 {
 	char *ptr, *tmp, tmpbuf[4096];
 	router_cmd_t cmd;
@@ -144,14 +179,14 @@ int parser_cmd(char buf[], void* context)
 	DEBUG_WARN("version:%s, cmd:%s, cmd_i:%s\n", cmd.version, cmd.cmd, cmd.cmd_i);
 #endif
 
-	ret = handle_cmd(cmd.cmd_i, tmp, tmpbuf);
+	ret = handle_cmd(cmd.cmd_i, tmp, router_init, type, tmpbuf);
 //fix me; may be should return response
 	if(tmpbuf != NULL){
 		sprintf((char*)context, "%s:%s:%s;%s", cmd.version, "response", cmd.cmd_i, tmpbuf);
-		DEBUG_WARN("@@@@@@ send context = %s\n",context);
+		DEBUG_WARN("send context = %s\n",context);
 	}else{
 		sprintf((char*)context, "%s:%s:%s;", cmd.version, "response", cmd.cmd_i);
-		DEBUG_WARN("@@@@@@ send context = %s\n",context);
+		DEBUG_WARN("send context = %s\n",context);
 	}
 
 	return ret;

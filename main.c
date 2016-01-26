@@ -137,7 +137,6 @@ int server_init(void)
         return(-1);  
     } 
 
-        printf("@@@@@@ send str = %s\n",str);
 	sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 	close(sock);
 
@@ -149,6 +148,8 @@ int server_init(void)
  **/
 void loop(int sock) 
 { 
+	int router_init = 1;
+
 	struct sockaddr_in servaddr; 
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
@@ -194,7 +195,7 @@ void loop(int sock)
 		{
 			if (start_with(recvbuf, "UBoxV002"))
 			{
-				if (parser_cmd(recvbuf, sendbuf) == 0) 
+				if (parser_cmd(recvbuf, BOXSET, &router_init, sendbuf) == 0) 
 				{
 					//response to client, send	
 #ifdef _DEBUG_MAIN_
@@ -204,6 +205,28 @@ void loop(int sock)
 				}
 				else
 				{
+					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
+				}
+				continue;
+			}else if(start_with(recvbuf, "UPhoneV002")) {
+				if (parser_cmd(recvbuf, PHONE, &router_init, sendbuf) == 0) {
+					//response to client, send	
+#ifdef _DEBUG_MAIN_
+					DEBUG_WARN("sendbuf:%s\n", sendbuf);
+#endif
+					if(phoneInit == 0) {
+#ifdef _DEBUG_MAIN_
+						DEBUG_WARN("no need init\n");
+#endif
+						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
+					}else if(router_init == 1){
+#ifdef _DEBUG_MAIN_
+						DEBUG_WARN("need init\n");
+#endif
+						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
+						router_init_script("all");
+					}
+				}else{
 					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
 				}
 				continue;

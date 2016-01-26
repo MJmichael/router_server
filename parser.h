@@ -7,6 +7,8 @@
 #ifndef _PASER_H_
 #define _PASER_H_
 
-int parser_cmd(char buf[], void* context);
+#include "router_base_i.h"
+
+int parser_cmd(char buf[], DEVICE_TYPE_t type, int* router_init, void* context);
 int parser_init(void);
 #endif

@@ -8,6 +8,11 @@
 #define _ROUTER_BASE_I_H_
 
 #define DEFAULT_LENGTH 64
+
+typedef enum {
+	BOXSET = 0,
+	PHONE
+} DEVICE_TYPE_t;
 //cmd head
 typedef struct {
 #define CMD_LENGTH 64

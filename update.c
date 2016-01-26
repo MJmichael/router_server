@@ -149,12 +149,30 @@ static int check_server_msg(int s, char *hostname)
 		return RET_OK;
 	}
 	printf("%s %d\n", __FUNCTION__, __LINE__);
-
 	(void)memset(server_msg, 0, sizeof(server_msg));
-	if(read(s, server_msg, sizeof(server_msg) - 1) < 0) {
-		ret_msg("read() failed");
+
+// no block
+	fd_set rfds;
+    struct timeval tv;
+    int retval, maxfd;
+
+	FD_ZERO(&rfds);
+	FD_SET(s, &rfds);
+
+	tv.tv_sec = 10;
+	tv.tv_usec = 0;	
+
+	retval = select(s+1, &rfds, NULL, NULL, &tv);
+	if (retval <= 0) {
+		ret_msg("timeout exit\n");
 		close(s);
 		return RET_ERROR;
+	}else if(FD_ISSET(s, &rfds)) {
+		if(read(s, server_msg, sizeof(server_msg) - 1) < 0) {
+			ret_msg("read() failed");
+			close(s);
+			return RET_ERROR;
+		}
 	}
 
 	print_debug("\n\nServer message:"

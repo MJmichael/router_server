@@ -1,5 +1,5 @@
-#ifndef GET_CONNECTION_H
-#define GET_CONNECTION_H
+#ifndef UPDATE_H
+#define UPDATE_H
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -41,6 +41,8 @@ static inline int get_connection(const char *hostname, const int port, const cha
 		*err = "socket() failed";
 		return -1;
 	}
+	int nNetTimeout = 5000;
+	setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char *)&nNetTimeout, sizeof(int));
 
 	if(connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
 		*err = "connect() failed";

@@ -56,19 +56,23 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		sscanf(data, "%[^:]%*c%s", id.id, id.data);
 		return g_router->search(&id, context);
 	}
-	else if(start_with(cmd,"get_router_repeater")){
+	else if(start_with(cmd,"get_router_repeater"))
+	{
 		return g_router->repeater_get(context);
 	}
-	else if(start_with(cmd,"set_router_wifiSearch")){
+	else if(start_with(cmd,"set_router_wifiSearch"))
+	{
 		return g_router->wifi_search( context);
 	}
-	else if(start_with(cmd,"set_router_repeater")){
+	else if(start_with(cmd,"set_router_repeater"))
+	{
 		 router_repeater_t repeaterConfig;
 		sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%s", repeaterConfig.name, repeaterConfig.channel, 
 			repeaterConfig.key, repeaterConfig.key_type);
 		return g_router->repeater_config( &repeaterConfig,context);
 	}
-	else if(start_with(cmd,"set_router_enrepeater")){
+	else if(start_with(cmd,"set_router_enrepeater"))
+	{
 		return g_router->enrepeater_config( context);
 	}
 	else if(start_with(cmd, "set_router_wanPPPOE"))
@@ -114,7 +118,7 @@ static int handle_cmd(char cmd[], char data[], void* context)
 		DEBUG_WARN("%s\n", wifi_mac.mac);
 		return g_router->wan_config_mac(&wifi_mac, context);
 	}
-	else if(start_with(cmd, "check_router_version"))
+	else if(start_with(cmd, "get_router_update"))
 	{
 		return g_router->check_update(NULL, context);
 	}

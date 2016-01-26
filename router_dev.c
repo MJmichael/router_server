@@ -1504,7 +1504,8 @@ static int router_update_firmware(void* context)
 	
 ret_err:
 	printf(tmpBuf);
-	return (-1);	
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "fail");
+	return (0);	
 }
 
 static int router_check_update(router_version_t *config, void* context)

@@ -46,4 +46,7 @@ typedef struct {
 } router_dev_t;
 
 void *router_dev_open(void);
+int router_get_version(void* context);
+int router_get_mac(void* context);
+
 #endif

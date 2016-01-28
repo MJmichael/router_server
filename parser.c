@@ -212,7 +212,9 @@ int parser_term(void)
 {
 	if(g_router != NULL)
 	{
+#ifdef _DEBUG_PARSER_
 		DEBUG_WARN("router device freen\n");
+#endif
 		free(g_router);
 	}
 

@@ -121,7 +121,7 @@ static int handle_cmd(char cmd[], char data[], int* router_init, DEVICE_TYPE_t t
 				sscanf(data, "%[^:]%*c%[^:]%*c%[^:]%*c%[^:]%*c%s",
 				wifi_config.wifiType1, wifi_config.wifiType2,wifi_config.name, wifi_config.key_type, wifi_config.key);
 		}
-		return g_router->wan_config_dhcp((type, router_wan_dhcp_t*)data, &wifi_config, context);
+		return g_router->wan_config_dhcp(type, (router_wan_dhcp_t*)data, &wifi_config, context);
 	}
 	else if(start_with(cmd, "set_router_wifi"))
 	{

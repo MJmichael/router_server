@@ -85,7 +85,6 @@ static int get_host_status(const char* addr)
 	bzero(&ifr, sizeof(ifr));
 	inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-	bzero(&ifr, sizeof(ifr));
 	strcpy(ifr.ifr_name, addr);
 	if (ioctl(inet_sock, SIOCGIFFLAGS, &ifr) < 0)
 	{
@@ -214,14 +213,14 @@ void loop(int sock)
 #ifdef _DEBUG_MAIN_
 					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif
-					if(phoneInit == 0) {
+					if(router_init == 0) {
 #ifdef _DEBUG_MAIN_
-						DEBUG_WARN("no need init\n");
+						DEBUG_ERR("no need init\n");
 #endif
 						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 					}else if(router_init == 1){
 #ifdef _DEBUG_MAIN_
-						DEBUG_WARN("need init\n");
+						DEBUG_ERR("need init\n");
 #endif
 						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 						router_init_script("all");

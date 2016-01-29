@@ -83,7 +83,7 @@ static int request(const int s, struct arguments *args)
 	char message[BUFLEN];
         
     (void)snprintf(message, BUFLEN,
-                       "GET /os/routerAction.do?method=queryRouterNewVersion&versionCode=%s&chipType=%s&mac=%s&model=%s",
+                       "GET /routerAction.do?method=queryRouterNewVersion&versionCode=%s&chipType=%s&mac=%s&model=%s",
                        args->versionCode, args->chipType, args->macAddr, args->model);      
 	{
 		char buffer[1024];
@@ -120,11 +120,7 @@ int check_version(int argc, char *argv[])
 	char context_mac[64], context_version[64];
 
     (void)memset(&args, 0, sizeof(struct arguments));
-#if 0
-	//real data
-    args.versionCode= strdup("3447");   
-    args.macAddr = strdup("9FCAA14544B2F");
-#endif
+
 	//versionCode
 	router_get_version(context_version);
 	args.versionCode = strdup(context_version);
@@ -153,7 +149,6 @@ int check_version(int argc, char *argv[])
  
 	return ret;
 }
-
 
 static int check_server_msg(int s, char *hostname)
 {
@@ -211,11 +206,14 @@ static int check_server_msg(int s, char *hostname)
 
 		ptr = strstr(server_msg, "\"versionCode\"");
 		ret_msg("%s\n", ptr);
-
-		sscanf(ptr + 15, "%[^\"]%*c%s", version, message);
+//version message
+		sscanf(ptr + 14, "%[^,]%*c%s", version, message);
 		ret_msg("versionCode:%s\n", version);
-		ret_code = atoi((ptr+15));
+
+//atoi version
+		ret_code = atoi((ptr+14));
 		ret_msg("ret_code:%d\n", ret_code);
+
 		if (ret_code != -1) 
 		{
 			ptr = strstr(server_msg, "\"url\":");
@@ -224,12 +222,13 @@ static int check_server_msg(int s, char *hostname)
 			sscanf(ptr + 7, "%[^\"]%*c%s", download, message);
 			printf("download:%s, message:%s\n", download, message);
 
-			sprintf(cmd, "wget -t 3 -O fw.bin \"%s\"\n", download);
+			sprintf(cmd, "wget -t 3 -O %s \"%s\"\n", FILENAME, download);
+			printf("cmd:%s\n", cmd);
 			system(cmd);
 
 			FILE *fd;
 			fd = fopen(VERSION_FILE, "wb+");
-			fwrite(version, strlen(version), 1, fd);
+			fwrite((version+3), (strlen(version)-3), 1, fd);
 			fclose(fd);
 		} else {
 			ret_msg("os.taixin.cn: No New Version\n");
@@ -243,5 +242,6 @@ static int check_server_msg(int s, char *hostname)
 	}
 
 	close(s);
+
 	return RET_OK;
 }

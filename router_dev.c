@@ -287,10 +287,7 @@ int router_get_version(void* context)
 		return(-1);
 	}
 	
-	sprintf(ptr, "3.4.4.%s\n", default_version);
-#ifdef _DEBUG_ROUTER_DEV_
-	DEBUG_ERR(ptr);
-#endif
+	sprintf(ptr, "344%s", default_version);
 
 	return 0;	
 }
@@ -312,10 +309,7 @@ int router_get_mac(void* context)
 		return(-1);
 	}
 		
-	sprintf(ptr, "s\n", default_mac);
-#ifdef _DEBUG_ROUTER_DEV_
-	DEBUG_ERR(ptr);
-#endif
+	sprintf(ptr, "%s", default_mac);
 	
 	return 0;
 }
@@ -440,8 +434,7 @@ static int router_search(DEVICE_TYPE_t type, router_id_t *id, void* context)
 	}
 	
 	//router wan mac
-	char default_mac[64];
-	if ((cmd_get("flash get HW_NIC0_ADDR;", (void*)default_mac) < 0))
+	if ((cmd_get("flash get HW_BOARD_VER;", (void*)default_version) < 0))
 	{
 		DEBUG_ERR("flash get HW_NIC0_ADDR error\n");
 		return(-1);
@@ -449,7 +442,7 @@ static int router_search(DEVICE_TYPE_t type, router_id_t *id, void* context)
 	
 	//combinate response info
 	sprintf(ptr, "\{\"IP\":\"%s\",\"version\":\"3.4.6.%s\",\"lan_mac\":\"%s\",\"wan_mac\":\"%s\",\"wifi_name\":%s,\"wifi_key\":%s,\"ppp_name\":%s,\"ppp_key\":%s}",
-			def_ip_addr, default_mac, hw_nic0_addr, hw_nic1_addr, wifi_name, wifi_key, ppp_name, ppp_key);
+			def_ip_addr, default_version, hw_nic0_addr, hw_nic1_addr, wifi_name, wifi_key, ppp_name, ppp_key);
 	
 #ifdef _DEBUG_ROUTER_DEV_
 	DEBUG_ERR(ptr);
@@ -993,7 +986,7 @@ static void wlSiteSurveyTblRequest(void)
 		} else {
 			break;
 		}
-	} while(1) 
+	} while(1);
 	
 REQUESTERROR:
 		free(pStatus);  
@@ -1687,7 +1680,7 @@ static int set_wifi_config(DEVICE_TYPE_t type, router_wifi_t *config, void* cont
 int firmware_len = 0;
 char *firmware_data = NULL;
 
-static int router_update_firmware(DEVICE_TYPE_t type, void* context)
+int router_update_firmware(DEVICE_TYPE_t type, void* context)
 {
 	int fileLen = 0;
 	char *buff = NULL;
@@ -1695,7 +1688,7 @@ static int router_update_firmware(DEVICE_TYPE_t type, void* context)
 	char *submitUrl;
 	char lan_ip[30];	
 	char lan_ip_buf[30];
-	FILE *fd;
+	int fd;
 	
 	struct stat fileStat = {0};
 	int readLen=0,i=0;
@@ -1714,15 +1707,17 @@ static int router_update_firmware(DEVICE_TYPE_t type, void* context)
 		goto ret_err;
 	}
 	lseek(fd, 0L, SEEK_SET);
-	printf("<read image from mem device>\n");
+#ifdef _DEBUG_ROUTER_DEV_
+	DEBUG_ERR("<read image from mem device>\n");
+#endif
 	
 	buff = malloc(fileLen + 17);
 	if(buff == NULL)
 	{
-		sprintf(tmpBuf, ("malloc %d failed !\n"),fileLen + 17);
+		sprintf(tmpBuf, ("Malloc %d failed !\n"), (fileLen + 17));
 		goto ret_err;
 	}
-	bzero(buff, fileLen + 17);
+	bzero(buff, (fileLen + 17));
 		
 	strcpy(buff, WINIE6_STR);
 	buff[13] = 0x0d;
@@ -1733,7 +1728,7 @@ static int router_update_firmware(DEVICE_TYPE_t type, void* context)
 	readLen = read(fd, (buff + 17), fileLen);
 	if(readLen != fileLen)
 	{
-		sprintf(tmpBuf, ("read %d but file len is %d, read fail!\n"), readLen, fileLen);
+		sprintf(tmpBuf, ("Read %d but file len is %d, read fail!\n"), readLen, fileLen);
 		goto ret_err;
 	}
 
@@ -1742,6 +1737,7 @@ static int router_update_firmware(DEVICE_TYPE_t type, void* context)
 
 	doFirmwareUpgrade(firmware_data, firmware_len, 0, tmpBuf);
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", "success");
+
 	return 0;
 	
 ret_err:
@@ -1770,7 +1766,7 @@ static int router_check_update(DEVICE_TYPE_t type, router_version_t *config, voi
      	fclose(fp);
  
      	printf("buf:%s\n", result);
-		sprintf((char*)context, "\{\"STATUS\":\"%s\", \"version\":\"%s\"}", "success", result);
+		sprintf((char*)context, "\{\"STATUS\":\"%s\", \"version\":\"3.4.4.%s\"}", "success", result);
 	} else {
 		sprintf((char*)context, "\{\"STATUS\":\"%s\", \"version\":\"%s\"}", "fail", "-1");
 	}

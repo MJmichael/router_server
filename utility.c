@@ -60,22 +60,21 @@
 #define CONFIG_APP_TR069 1
 #endif
 
+#define COMPRESS_MIB_SETTING 1
+
+#define MACIE5_CFGSTR	"/plain\x0d\x0a\0x0d\0x0a"
+#define WINIE6_STR	"/octet-stream\x0d\x0a\0x0d\0x0a"
+#define MACIE5_FWSTR	"/macbinary\x0d\x0a\0x0d\0x0a"
+#define OPERA_FWSTR	"/x-macbinary\x0d\x0a\0x0d\0x0a"
+#define LINE_FWSTR	"\x0d\x0a\0x0d\0x0a"
+#define LINUXFX36_FWSTR "/x-ns-proxy-autoconfig\x0d\x0a\0x0d\0x0a"
+
 /*-- Local routine declaration --*/
 static int get_dev_fields(int type, char *bp, struct user_net_device_stats *pStats);
 static char *get_name(char *name, char *p);
 
-
-
-
-
-
-
-
-
-
 #if defined(CONFIG_APP_TR069)
 #if defined(_PRMT_TR143_)
-
 char *strItf[]=
 {
 	"",		//ITF_ALL
@@ -2927,6 +2926,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 	char *ptr;
 
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 	do {
 #ifdef COMPRESS_MIB_SETTING
 		pCompHeader =(COMPRESS_MIB_HEADER_Tp)&data[complen];
@@ -2934,6 +2934,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 		pCompHeader->compRate = WORD_SWAP(pCompHeader->compRate);
 		pCompHeader->compLen = DWORD_SWAP(pCompHeader->compLen);
 #endif
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 		/*decompress and get the tag*/
 		expFile=malloc(pCompHeader->compLen*pCompHeader->compRate);
 		if(NULL==expFile)
@@ -2952,6 +2953,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 				isHdware=1;
 				phwHeader=(HW_PARAM_HEADER_Tp)expFile;
 			}			
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 #endif
 #else
 #ifdef HEADER_LEN_INT
@@ -2980,6 +2982,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 		if ( sscanf(&pHeader->signature[TAG_LEN], "%02d", &ver) != 1)
 			ver = -1;
 			
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 		force = -1;
 		if ( !memcmp(pHeader->signature, CURRENT_SETTING_HEADER_TAG, TAG_LEN) )
 			force = 1; // update
@@ -2987,6 +2990,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			force = 2; // force
 		else if ( !memcmp(pHeader->signature, CURRENT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN))
 			force = 0; // upgrade
+	printf("%s %d, force:%d\n", __FUNCTION__, __LINE__, force);
 
 		if ( force >= 0 ) {
 #if 0
@@ -3008,6 +3012,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			ptr = &data[len];
 #endif
 
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 #ifdef COMPRESS_MIB_SETTING
 #else
 #ifdef HEADER_LEN_INT
@@ -3017,6 +3022,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 			DECODE_DATA(ptr, pHeader->len);
 #endif
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 			
 #ifdef HEADER_LEN_INT
 			if(isHdware)
@@ -3035,6 +3041,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #ifdef _LITTLE_ENDIAN_
 			swap_mib_word_value((APMIB_Tp)ptr);
 #endif
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 // added by rock /////////////////////////////////////////
 #ifdef VOIP_SUPPORT
@@ -3042,6 +3049,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			flash_voip_import_fix(&((APMIB_Tp)ptr)->voipCfgParam, &pMib->voipCfgParam);
 #endif
 #endif
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 #ifdef COMPRESS_MIB_SETTING
 			apmib_updateFlash(CURRENT_SETTING, &data[complen], pCompHeader->compLen+sizeof(COMPRESS_MIB_HEADER_T), force, ver);
@@ -3053,6 +3061,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 			apmib_updateFlash(CURRENT_SETTING, ptr, pHeader->len-1, force, ver);
 #endif
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 #ifdef COMPRESS_MIB_SETTING
 			complen += pCompHeader->compLen+sizeof(COMPRESS_MIB_HEADER_T);
@@ -3072,6 +3081,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			type |= CURRENT_SETTING;
 			continue;
 		}
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 
 		if ( !memcmp(pHeader->signature, DEFAULT_SETTING_HEADER_TAG, TAG_LEN) )
@@ -3080,6 +3090,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			force = 2;	// force
 		else if ( !memcmp(pHeader->signature, DEFAULT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) )
 			force = 0;	// upgrade
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 		if ( force >= 0 ) {
 #if 0
@@ -3100,6 +3111,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #else
 			ptr = &data[len];
 #endif
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 #ifdef COMPRESS_MIB_SETTING
 #else
@@ -3125,6 +3137,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 				break;
 			}
 
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 #ifdef _LITTLE_ENDIAN_
 			swap_mib_word_value((APMIB_Tp)ptr);
 #endif
@@ -3260,6 +3273,7 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 
 	*pType = type;
 	*pStatus = status;
+	printf("%s %d\n", __FUNCTION__, __LINE__);
 #ifdef COMPRESS_MIB_SETTING	
 	return complen;
 #else
@@ -3267,232 +3281,452 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 }
 
-int doFirmwareUpgrade(char *upload_data, int upload_len, int is_root, char *buffer)
+int find_head_offset(char *upload_data)
 {
-int head_offset=0 ;
-int isIncludeRoot=0;
- int		 len;
-    int          locWrite;
-    int          numLeft;
-    int          numWrite;
-    IMG_HEADER_Tp pHeader;
-	int flag=0, startAddr=-1, startAddrWeb=-1;
-	int update_fw=0, update_cfg=0;
-#ifdef __mips__
-    int fh;
-#else
-    FILE *fp;
-    char *bn = NULL;
-#endif
-	unsigned char cmdBuf[30];
+	int head_offset=0 ;
+	char *pStart=NULL;
+	int iestr_offset=0;
+	char *dquote;
+	char *dquote1;
 
-	system("ifconfig br0 down 2> /dev/null");
+	if (upload_data == NULL) {
+		//fprintf(stderr, "upload data is NULL\n");
+		return -1;
+	}
 
-
-while(head_offset <   upload_len) {
-    locWrite = 0;
-    pHeader = (IMG_HEADER_Tp) &upload_data[head_offset];
-    len = pHeader->len;
-#ifdef _LITTLE_ENDIAN_
-    len  = DWORD_SWAP(len);
-#endif    
-    numLeft = len + sizeof(IMG_HEADER_T) ;
-    
-    // check header and checksum
-    if (!memcmp(&upload_data[head_offset], FW_HEADER, SIGNATURE_LEN) || !memcmp(&upload_data[head_offset], FW_HEADER_WITH_ROOT, SIGNATURE_LEN))
-    	flag = 1;
-    else if (!memcmp(&upload_data[head_offset], WEB_HEADER, SIGNATURE_LEN))
-    	flag = 2;
-    else if (!memcmp(&upload_data[head_offset], ROOT_HEADER, SIGNATURE_LEN))
-    {
-    	flag = 3;
-    	isIncludeRoot = 1;
-    }
-    else if (
-#ifdef COMPRESS_MIB_SETTING
-				!memcmp(&upload_data[head_offset], COMP_HS_SIGNATURE, COMP_SIGNATURE_LEN) ||
-				!memcmp(&upload_data[head_offset], COMP_DS_SIGNATURE, COMP_SIGNATURE_LEN) ||
-				!memcmp(&upload_data[head_offset], COMP_CS_SIGNATURE, COMP_SIGNATURE_LEN)
-#else	
-    	 	!memcmp(&upload_data[head_offset], CURRENT_SETTING_HEADER_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], CURRENT_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], CURRENT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], DEFAULT_SETTING_HEADER_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], DEFAULT_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], DEFAULT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], HW_SETTING_HEADER_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], HW_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
-				!memcmp(&upload_data[head_offset], HW_SETTING_HEADER_UPGRADE_TAG, TAG_LEN)
-#endif				
-		)
-    {
-		int type, status, cfg_len;
-			
-		cfg_len = updateConfigIntoFlash(&upload_data[head_offset], 0, &type, &status);
-		
-		if (status == 0 || type == 0) { // checksum error
-			strcpy(buffer, "Invalid configuration file!");
-			goto ret_upload;
+	pStart = strstr(upload_data, WINIE6_STR);
+	if (pStart == NULL) {
+		pStart = strstr(upload_data, LINUXFX36_FWSTR);
+		if (pStart == NULL) {
+			pStart = strstr(upload_data, MACIE5_FWSTR);
+			if (pStart == NULL) {
+				pStart = strstr(upload_data, OPERA_FWSTR);
+				if (pStart == NULL) {
+					pStart = strstr(upload_data, "filename=");
+					if (pStart == NULL) {
+						return -1;
+					}
+					else {
+						dquote =  strstr(pStart, "\"");
+						if (dquote !=NULL) {
+							dquote1 = strstr(dquote, LINE_FWSTR);
+							if (dquote1!=NULL) {
+								iestr_offset = 4;
+								pStart = dquote1;
+							}
+							else {
+								return -1;
+							}
+						}
+						else {
+							return -1;
+						}
+					}
+				}
+				else {
+					iestr_offset = 16;
+				}
+			} 
+			else {
+				iestr_offset = 14;
+			}
 		}
-		else { // upload success
-			strcpy(buffer, "Update successfully!");
-			head_offset += cfg_len;
-			update_cfg = 1;
-		}    	
-		continue;
-    }
-    else {
-       	sprintf(buffer, "Invalid file format [%s-%d]!",__FILE__,__LINE__);
-		goto ret_upload;
-    }
-
-
-    if(len > 0x200000){ //len check by sc_yang
-      		sprintf(buffer, "Image len exceed max size 0x200000 ! len=0x%x</b><br>", len);
-		goto ret_upload;
-    }
-    if ( (flag == 1) || (flag == 3)) {
-    	if ( !fwChecksumOk(&upload_data[sizeof(IMG_HEADER_T)+head_offset], len)) 
-    	{
-      		sprintf(buffer, "Image checksum mismatched! len=0x%x, checksum=0x%x</b><br>", len,
-			*((unsigned short *)&upload_data[len-2]) );
-		goto ret_upload;
-	}
-    }
-    else {
-    	char *ptr = &upload_data[sizeof(IMG_HEADER_T)+head_offset];
-    	if ( !CHECKSUM_OK(ptr, len) ) 
-    	{
-     		sprintf(buffer, "Image checksum mismatched! len=0x%x</b><br>", len);
-		goto ret_upload;
-	}
-    }
-
-#ifdef __mips__
-    if(flag == 3)
-    	fh = open(FLASH_DEVICE_NAME1, O_RDWR);
-    else
-       fh = open(FLASH_DEVICE_NAME, O_RDWR);
-
-    if ( fh == -1 ) {
-#else
-    if (flag == 1)
-    	bn = "apcode.bin";
-    else if (flag == 3)
-    	bn = "root.bin" ;
-    else
-    	bn = "web.gz.up";
-
-    if ((fp = fopen((bn == NULL ? "upldForm.bin" : bn), "w+b")) == NULL) {
-#endif
-       	strcpy(buffer, "File open failed!");
-	goto ret_upload;
-    } else {
-
-#ifdef __mips__
-	if (flag == 1) {
-		if ( startAddr == -1){
-			//startAddr = CODE_IMAGE_OFFSET;
-			startAddr = pHeader->burnAddr ;
-			#ifdef _LITTLE_ENDIAN_
-    				startAddr = DWORD_SWAP(startAddr);
-    			#endif
-		}
-
-	}
-	else if (flag == 3) {
-		if ( startAddr == -1){
-			startAddr = 0; // always start from offset 0 for 2nd FLASH partition
+		else {
+			iestr_offset = 26;
 		}
 	}
 	else {
-		if ( startAddrWeb == -1){
-			//startAddr = WEB_PAGE_OFFSET;
-			startAddr = pHeader->burnAddr ;
-			#ifdef _LITTLE_ENDIAN_
-    				startAddr = DWORD_SWAP(startAddr);
-    			#endif
-		}
-		else
-			startAddr = startAddrWeb;
+		iestr_offset = 17;
 	}
-	lseek(fh, startAddr, SEEK_SET);
-	if(flag == 3){
-		locWrite += sizeof(IMG_HEADER_T); // remove header
-		numLeft -=  sizeof(IMG_HEADER_T);
-		system("ifconfig br0 down 2> /dev/null");
-		system("ifconfig eth0 down 2> /dev/null");
-		system("ifconfig eth1 down 2> /dev/null");
-		system("ifconfig ppp0 down 2> /dev/null");
-		system("ifconfig wlan0 down 2> /dev/null");
-		system("ifconfig wlan0-vxd down 2> /dev/null");				
-		system("ifconfig wlan0-va0 down 2> /dev/null");		
-		system("ifconfig wlan0-va1 down 2> /dev/null");		
-		system("ifconfig wlan0-va2 down 2> /dev/null");		
-		system("ifconfig wlan0-va3 down 2> /dev/null");
-		system("ifconfig wlan0-wds0 down 2> /dev/null");
-		system("ifconfig wlan0-wds1 down 2> /dev/null");
-		system("ifconfig wlan0-wds2 down 2> /dev/null");
-		system("ifconfig wlan0-wds3 down 2> /dev/null");
-		system("ifconfig wlan0-wds4 down 2> /dev/null");
-		system("ifconfig wlan0-wds5 down 2> /dev/null");
-		system("ifconfig wlan0-wds6 down 2> /dev/null");
-		system("ifconfig wlan0-wds7 down 2> /dev/null");
+	//fprintf(stderr,"####%s:%d %d###\n",  __FILE__, __LINE__ , iestr_offset);
+	head_offset = (int)(((unsigned long)pStart)-((unsigned long)upload_data)) + iestr_offset;
+	return head_offset;
+}
 
-		kill_processes();
-		sleep(2);
-	}
+#undef FW_HEADER_WITH_ROOT
+#undef FW_HEADER
+#undef ROOT_HEADER
+
+#define FW_HEADER_WITH_ROOT	((char *)"cr6c")
+#define FW_HEADER			((char *)"cs6c")
+#define ROOT_HEADER			((char *)"r6cr")
 	
-	numWrite = write(fh, &(upload_data[locWrite+head_offset]), numLeft);
-#else
-	numWrite = fwrite(&(upload_data[locWrite+head_offset]), sizeof(*(upload_data)), numLeft, fp);
-#endif
-	if (numWrite < numLeft) {
-#ifdef __mips__
-		sprintf(buffer, "File write failed. locWrite=%d numLeft=%d numWrite=%d Size=%d bytes.", locWrite, numLeft, numWrite, upload_len);
 
-#else
-                sprintf(buffer, "File write failed. ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes.", ferror(fp), locWrite, numLeft, numWrite, upload_len);
+int doFirmwareUpgrade(char *upload_data, int upload_len, int is_root, char *buffer)
+{
+		int head_offset=0 ;
+		int isIncludeRoot=0;
+		int	len;
+		int locWrite;
+		int numLeft;
+		int numWrite;
+		IMG_HEADER_Tp pHeader;
+		int flag=0, startAddr=-1, startAddrWeb=-1;
+		int update_fw=0, update_cfg=0;
+		int fh;
+
+		//int fwSizeLimit = CONFIG_FLASH_SIZE;
+		int fwSizeLimit = 0x400000;
+#ifdef CONFIG_RTL_FLASH_DUAL_IMAGE_ENABLE
+		int active_bank,backup_bank;
+		int dual_enable =0;
 #endif
-	goto ret_upload;
-	}
-	locWrite += numWrite;
- 	numLeft -= numWrite;
-	sync();
-#ifdef __mips__
-	//if(flag != 3)
-		close(fh);
-#else
-	fclose(fp);
+		unsigned char isValidfw = 0;
+
+#if defined(CONFIG_APP_FWD)
+#define FWD_CONF "/var/fwd.conf"
+		int newfile = 1;
+		extern int get_shm_id();
+		extern int clear_fwupload_shm();
+		int shm_id = get_shm_id();
 #endif
-	head_offset += len + sizeof(IMG_HEADER_T) ;
-	startAddr = -1 ; //by sc_yang to reset the startAddr for next image
-	update_fw = 1;
-    }
-} //while //sc_yang   
+
+		system("ifconfig br0 down 2> /dev/null");
+#ifdef CONFIG_RTL_FLASH_DUAL_IMAGE_ENABLE
+		apmib_get(MIB_DUALBANK_ENABLED,(void *)&dual_enable);   
+		get_bank_info(dual_enable,&active_bank,&backup_bank);        
+#endif
+		head_offset = find_head_offset(upload_data);
+		//fprintf(stderr,"####%s:%d %d upload_data=%p###\n",  __FILE__, __LINE__ , head_offset, upload_data);
+		if (head_offset == -1) 
+		{
+			strcpy(buffer, "Invalid file format!");
+			goto ret_upload;
+		}
+
+		while ((head_offset+sizeof(IMG_HEADER_T)) < upload_len) 
+		{
+			locWrite = 0;
+			pHeader = (IMG_HEADER_Tp) &upload_data[head_offset];
+			len = pHeader->len;
+#ifdef _LITTLE_ENDIAN_
+			len  = DWORD_SWAP(len);
+#endif
+			numLeft = len + sizeof(IMG_HEADER_T) ;
+
+#if 0
+			int i = 0;
+			for(; i<SIGNATURE_LEN; i++)
+				printf("%02x ", upload_data[head_offset+i]);
+
+			printf("\n");
+
+			printf("fw_header_with_root:%s\n", FW_HEADER_WITH_ROOT);
+#endif
+			// check header and checksum
+			if (!memcmp(&upload_data[head_offset], FW_HEADER, SIGNATURE_LEN) ||
+					!memcmp(&upload_data[head_offset], FW_HEADER_WITH_ROOT, SIGNATURE_LEN)) {
+				isValidfw = 1;
+				flag = 1;
+			} else if (!memcmp(&upload_data[head_offset], WEB_HEADER, SIGNATURE_LEN)) {
+				isValidfw = 1;
+				flag = 2;
+			} else if (!memcmp(&upload_data[head_offset], ROOT_HEADER, SIGNATURE_LEN)) {
+				isValidfw = 1;
+				flag = 3;
+				isIncludeRoot = 1;
+			}else if (
+#ifdef COMPRESS_MIB_SETTING
+					!memcmp(&upload_data[head_offset], COMP_HS_SIGNATURE, COMP_SIGNATURE_LEN) ||
+					!memcmp(&upload_data[head_offset], COMP_DS_SIGNATURE, COMP_SIGNATURE_LEN) ||
+					!memcmp(&upload_data[head_offset], COMP_CS_SIGNATURE, COMP_SIGNATURE_LEN)
+#else
+					!memcmp(&upload_data[head_offset], CURRENT_SETTING_HEADER_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], CURRENT_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], CURRENT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], DEFAULT_SETTING_HEADER_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], DEFAULT_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], DEFAULT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], HW_SETTING_HEADER_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], HW_SETTING_HEADER_FORCE_TAG, TAG_LEN) ||
+					!memcmp(&upload_data[head_offset], HW_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) 
+#endif			
+					) {
+				int type=0, status=0, cfg_len;
+				int configlen = 0;
+				cfg_len = updateConfigIntoFlash((unsigned char *)&upload_data[head_offset], configlen , &type, &status);
+
+				if (status == 0 || type == 0) { // checksum error
+					strcpy(buffer, "Invalid configuration file!");
+					goto ret_upload;
+				} else { // upload success
+					strcpy(buffer, "Update successfully!");
+					head_offset += cfg_len;
+					isValidfw = 1;
+					update_cfg = 1;
+				}
+				continue;
+			} else {
+				if (isValidfw == 1)
+				{
+					break;
+				}
+				strcpy(buffer, ("Invalid file format!"));
+				goto ret_upload;
+			}
+
+			if (len > fwSizeLimit) 
+			{ //len check by sc_yang 
+				sprintf(buffer, ("Image len exceed max size 0x%x ! len=0x%x</b><br>"),fwSizeLimit, len);
+				goto ret_upload;
+			}
+
+			if ( (flag == 1) || (flag == 3)) 
+			{
+				if ( !fwChecksumOk(&upload_data[sizeof(IMG_HEADER_T)+head_offset], len)) 
+				{
+					sprintf(buffer, ("Image checksum mismatched! len=0x%x, checksum=0x%x</b><br>"), len,
+							*((unsigned short *)&upload_data[len-2]) );
+					goto ret_upload;
+				}
+			} else {
+				char *ptr = &upload_data[sizeof(IMG_HEADER_T)+head_offset];
+				if (!CHECKSUM_OK((unsigned char *)ptr, len)) 
+				{
+					sprintf(buffer, ("Image checksum mismatched! len=0x%x</b><br>"), len);
+					goto ret_upload;
+				}
+			}
+
+#ifndef CONFIG_RTL_FLASH_DUAL_IMAGE_ENABLE
+			if (flag == 3)
+			{
+				fh = open(FLASH_DEVICE_NAME1, O_RDWR);
+
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), FLASH_DEVICE_NAME1);
+				newfile = 2;
+#endif			
+			}
+			else
+			{
+				fh = open(FLASH_DEVICE_NAME, O_RDWR);
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), FLASH_DEVICE_NAME);
+				newfile = 2;
+#endif			
+			}
+#else
+			if (flag == 3) //rootfs
+			{
+				fh = open(Rootfs_dev_name[backup_bank-1], O_RDWR);
+
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), Rootfs_dev_name[backup_bank-1]);
+				newfile = 2;
+#endif			
+			}
+			else if (flag == 1) //linux
+			{
+				fh = open(Kernel_dev_name[backup_bank-1], O_RDWR);
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), Kernel_dev_name[backup_bank-1]);
+				newfile = 2;
+#endif			
+			}
+			else //web
+			{
+#if defined(CONFIG_RTL_FLASH_DUAL_IMAGE_ENABLE)
+#if defined(CONFIG_RTL_FLASH_DUAL_IMAGE_WEB_BACKUP_ENABLE)
+				fh = open(Web_dev_name[backup_bank-1],O_RDWR);
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), Web_dev_name[backup_bank-1]);
+				newfile = 2;
+#endif			
+#else		
+				fh = open(FLASH_DEVICE_NAME, O_RDWR);
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), FLASH_DEVICE_NAME);
+				newfile = 2;
+#endif	
+#endif		
+#else		
+				fh = open(FLASH_DEVICE_NAME, O_RDWR);		
+#if defined(CONFIG_APP_FWD)			
+				write_line_to_file(FWD_CONF, (newfile==1?1:2), FLASH_DEVICE_NAME);
+				newfile = 2;
+#endif
+#endif			
+			}
+#endif
+
+			if ( fh == -1 ) 
+			{
+				strcpy(buffer, ("File open failed!"));
+			} else {
+				if (flag == 1) 
+				{
+					if (startAddr == -1) 
+					{
+						//startAddr = CODE_IMAGE_OFFSET;
+						startAddr = pHeader->burnAddr ;
+#ifdef _LITTLE_ENDIAN_
+						startAddr = DWORD_SWAP(startAddr);
+#endif
+					}
+				} else if (flag == 3) {
+					if (startAddr == -1) 
+					{
+						startAddr = 0; // always start from offset 0 for 2nd FLASH partition
+					}
+				} else {
+					if (startAddrWeb == -1) 
+					{
+						//startAddr = WEB_PAGE_OFFSET;
+						startAddr = pHeader->burnAddr ;
+#ifdef _LITTLE_ENDIAN_
+						startAddr = DWORD_SWAP(startAddr);
+#endif
+					} else {
+						startAddr = startAddrWeb;
+					}
+				}
+
+				lseek(fh, startAddr, SEEK_SET);
+
+#if defined(CONFIG_APP_FWD)			
+				{
+					char tmpStr[20]={0};
+					sprintf(tmpStr,"\n%d",startAddr);
+					write_line_to_file(FWD_CONF, (newfile==1?1:2), tmpStr);
+					newfile = 2;
+				}
+#endif			
+
+				if (flag == 3) 
+				{
+					locWrite += sizeof(IMG_HEADER_T); // remove header
+					numLeft -=  sizeof(IMG_HEADER_T);
+					system("ifconfig br0 down 2> /dev/null");
+					system("ifconfig eth0 down 2> /dev/null");
+					system("ifconfig eth1 down 2> /dev/null");
+					system("ifconfig ppp0 down 2> /dev/null");
+					system("ifconfig wlan0 down 2> /dev/null");
+					system("ifconfig wlan0-vxd down 2> /dev/null");		
+					system("ifconfig wlan0-va0 down 2> /dev/null");		
+					system("ifconfig wlan0-va1 down 2> /dev/null");		
+					system("ifconfig wlan0-va2 down 2> /dev/null");		
+					system("ifconfig wlan0-va3 down 2> /dev/null");
+					system("ifconfig wlan0-wds0 down 2> /dev/null");
+					system("ifconfig wlan0-wds1 down 2> /dev/null");
+					system("ifconfig wlan0-wds2 down 2> /dev/null");
+					system("ifconfig wlan0-wds3 down 2> /dev/null");
+					system("ifconfig wlan0-wds4 down 2> /dev/null");
+					system("ifconfig wlan0-wds5 down 2> /dev/null");
+					system("ifconfig wlan0-wds6 down 2> /dev/null");
+					system("ifconfig wlan0-wds7 down 2> /dev/null");
+#if defined(CONFIG_RTL_92D_SUPPORT)	
+					system("ifconfig wlan1 down 2> /dev/null");
+					system("ifconfig wlan1-vxd down 2> /dev/null");		
+					system("ifconfig wlan1-va0 down 2> /dev/null");		
+					system("ifconfig wlan1-va1 down 2> /dev/null");		
+					system("ifconfig wlan1-va2 down 2> /dev/null");		
+					system("ifconfig wlan1-va3 down 2> /dev/null");
+					system("ifconfig wlan1-wds0 down 2> /dev/null");
+					system("ifconfig wlan1-wds1 down 2> /dev/null");
+					system("ifconfig wlan1-wds2 down 2> /dev/null");
+					system("ifconfig wlan1-wds3 down 2> /dev/null");
+					system("ifconfig wlan1-wds4 down 2> /dev/null");
+					system("ifconfig wlan1-wds5 down 2> /dev/null");
+					system("ifconfig wlan1-wds6 down 2> /dev/null");
+					system("ifconfig wlan1-wds7 down 2> /dev/null");
+#endif
+					kill_processes();
+					sleep(2);
+				}
+#ifdef CONFIG_RTL_FLASH_DUAL_IMAGE_ENABLE
+				if (flag == 1) 
+				{  //kernel image
+					pHeader->burnAddr = get_next_bankmark(Kernel_dev_name[active_bank-1],dual_enable);	//replace the firmware header with new bankmark //mark_debug		
+				}
+#endif
+
+#if defined(CONFIG_APP_FWD)
+				{
+					char tmpStr[20]={0};
+					sprintf(tmpStr,"\n%d",numLeft);
+					write_line_to_file(FWD_CONF, (newfile==1?1:2), tmpStr);
+					sprintf(tmpStr,"\n%d\n",locWrite+head_offset);
+					write_line_to_file(FWD_CONF, (newfile==1?1:2), tmpStr);					
+					newfile = 2;
+				}
+
+#else //#if defined(CONFIG_APP_FWD)
+				numWrite = write(fh, &(upload_data[locWrite+head_offset]), numLeft);
+				if (numWrite < numLeft) 
+				{
+					sprintf(buffer, ("File write failed. locWrite=%d numLeft=%d numWrite=%d Size=%d bytes."), locWrite, numLeft, numWrite, upload_len);
+					goto ret_upload;
+				}
+
+#endif //#if defined(CONFIG_APP_FWD)
+
+				locWrite += numWrite;
+				numLeft -= numWrite;
+				sync();
+				close(fh);
+
+				head_offset += len + sizeof(IMG_HEADER_T) ;
+				startAddr = -1 ; //by sc_yang to reset the startAddr for next image
+				update_fw = 1;
+			}
+		} //while //sc_yang   
+
+		//fprintf(stderr,"####isUpgrade_OK###\n");
 #ifndef NO_ACTION
+		//isUpgrade_OK=1;
+		char result[64];
+		char cmd[128];
+		FILE *fp;
 
-//		alarm(2);
-		//system("reboot");
-		//for(;;);
+		fp = fopen("/tmp/version", "r+");
+		fgets(result, 64, fp);
+		fclose(fp);
+
+		sprintf(cmd, "flash set HW_BOARD_VER %s;", result);
+		printf("buf:%s, cmd:%s\n", result, cmd);
+		system(cmd);
+
+#if defined(CONFIG_APP_FWD)
+		{			
+			char tmpStr[20]={0};
+
+			sprintf(tmpStr,"%d",shm_id);
+
+			write_line_to_file("/var/fwd.ready", 1, tmpStr);
+
+			sync();
+			exit(0);
+		}
+#else	//#if defined(CONFIG_APP_FWD)
+		system("reboot");
+		for(;;);
+#endif //#if defined(CONFIG_APP_FWD)
+
 
 #else
 #ifdef VOIP_SUPPORT
-	// rock: for x86 simulation
-	if (update_cfg && !update_fw) {
-		if (apmib_reinit()) {
-//			reset_user_profile();  // re-initialize user password
+		// rock: for x86 simulation
+		if (update_cfg && !update_fw) 
+		{
+			if (apmib_reinit()) 
+			{
+				//reset_user_profile();  // re-initialize user password
+			}
 		}
-//		if(FW_Data)
-//			free(FW_Data);
+#endif
+#endif
+
+		return 1;
+ret_upload:	
+		fprintf(stderr, "%s\n", buffer);
+
+#if defined(CONFIG_APP_FWD)		
+		clear_fwupload_shm(shm_id);
+#endif
+
+		return 0;
 	}
-#endif
-#endif
-  return 1;
-  ret_upload:	
-  	fprintf(stderr, "%s\n", buffer);	
-	return 0;
-}
 
 #define BACKUP_RAW_CSCONF
 
@@ -3667,7 +3901,6 @@ unsigned int getWLAN_ChipVersion()
 			{
 				strtmp++;
 			}
-			
 
 			if(strstr(strtmp,"RTL8192SE") != 0)
 			{
@@ -3702,8 +3935,6 @@ unsigned int getWLAN_ChipVersion()
 	}
 
 	return chipVersion;
-
-
 }
 
 int isFileExist(char *file_name)
@@ -4106,7 +4337,6 @@ int getWlP2PStateEvent( char *interface, P2P_SS_STATUS_Tp pP2PStatus)
   return 0;
 }
 
-
 int getClientConnectState(char* wlan_interface_name)
 {
 
@@ -4140,7 +4370,6 @@ int getClientConnectState(char* wlan_interface_name)
 	return P2PStatus_t.p2p_status;
 	
 }
-
 
 int sendP2PProvisionCommInfo( char *interface, P2P_PROVISION_COMM_Tp pP2PProvisionComm)
 {

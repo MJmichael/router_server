@@ -105,7 +105,7 @@ int server_init(void)
 	int sock; 
 	char str[]="UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
 	char addr[1024];
-	
+
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(5188); 
@@ -126,15 +126,15 @@ int server_init(void)
 		DEBUG_ERR("socket");
 		return(-1);
 	}
-	
+
 	static int opt = 1;
 	int nb = 0;  
-  	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
-   	if(nb == -1)  
-    {  
-        DEBUG_ERR("error\n");
-        return(-1);  
-    } 
+	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
+	if(nb == -1)  
+	{  
+		DEBUG_ERR("error\n");
+		return(-1);  
+	} 
 
 	sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 	close(sock);
@@ -155,14 +155,13 @@ void loop(int sock)
 	servaddr.sin_port = htons(5188); 
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 
-	// create server sock
-	//bind
+	//Create server sock and bind;
 	if (bind(sock, (struct sockaddr *)&servaddr,  sizeof(servaddr)) <  0) 
 	{
 		ERR_EXIT( "Bind Error!");
 	}   
 
-	//for recv udp broadcast  
+	//For recv udp broadcast  
 	struct sockaddr_in recvaddr;  
 
 	bzero(&recvaddr, sizeof(struct sockaddr_in));
@@ -207,25 +206,27 @@ void loop(int sock)
 					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
 				}
 				continue;
-			}else if(start_with(recvbuf, "UPhoneV002")) {
-				if (parser_cmd(recvbuf, PHONE, &router_init, sendbuf) == 0) {
+			} else if(start_with(recvbuf, "UPhoneV002")) {
+				if (parser_cmd(recvbuf, PHONE, &router_init, sendbuf) == 0) 
+				{
 					//response to client, send	
 #ifdef _DEBUG_MAIN_
 					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif
-					if(router_init == 0) {
+					if (router_init == 0) 
+					{
 #ifdef _DEBUG_MAIN_
 						DEBUG_ERR("no need init\n");
 #endif
 						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
-					}else if(router_init == 1){
+					} else if(router_init == 1) {
 #ifdef _DEBUG_MAIN_
 						DEBUG_ERR("need init\n");
 #endif
 						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 						router_init_script("all");
 					}
-				}else{
+				} else {
 					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
 				}
 				continue;
@@ -237,10 +238,12 @@ void loop(int sock)
 //Update module thread
 void* check_update_thread(void *args)
 {
+	char tmp[1024];
 	do {
 		check_version(0, NULL);
-		sleep(60*60);
-	}while(1);
+		sleep(5);
+	//	router_update_firmware(PHONE, (void*)tmp);
+	} while(1);
 }
 
 int main(int argc, char* argv[]) 

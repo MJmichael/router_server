@@ -1125,148 +1125,262 @@ static int router_scanf(DEVICE_TYPE_t type, void* context)
 	
 	return 0;
 }
+static int getWlJoinResultForRepeater(char *interface, unsigned char *res)
+{
+    int skfd;
+    struct iwreq wrq;
+
+    skfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    /* Get wireless name */
+    if ( iw_get_ext(skfd, interface, SIOCGIWNAME, &wrq) < 0){
+      /* If no wireless name : no wireless extensions */
+      close( skfd );
+        return -1;
+	}
+    wrq.u.data.pointer = (caddr_t)res;
+    wrq.u.data.length = 1;
+
+    if (iw_get_ext(skfd, interface, SIOCGIWRTLJOINREQSTATUS, &wrq) < 0){
+    	close( skfd );
+	return -1;
+	}
+    close( skfd );
+
+    return 0;
+}
 
 static int router_repeater_config(DEVICE_TYPE_t type, router_repeater_t *config, void* context)
 {
 	char repeaterWifi[64],result[64], cmd[256];
-	int i = 0;
-
+	unsigned char res;
+	int i = 0,checkFlag = 0;
+	
 	if ((context == NULL) || (config == NULL)){
 #ifdef _DEBUG_ROUTER_DEV_
-		DEBUG_ERR("set repeater config error\n");
+		DEBUG_ERR("@@@@@@ set repeater config error\n");
 #endif
 		return -1;
 	}
 	sprintf(repeaterWifi, config->name);
 	int length = strlen(repeaterWifi);
 	repeaterWifi[length] = '\0';
-	printf("length = %d,repeaterWifi = %s\n",length,repeaterWifi);
-
+	printf("@@@@@@ length = %d,repeaterWifi = %s\n",length,repeaterWifi);
+	
+	printf("@@@@@@ repeater check 1th\n");
 	sprintf(cmd, "flash set DHCP 0");
-	if (cmd_set(cmd, result) < 0)
-	{
-		DEBUG_ERR("flash default error 1th\n");
+	if (cmd_set(cmd, result) < 0){
+		DEBUG_ERR("@@@@@@ flash default error 1th\n");
 		return(-1);
 	}
-
-	for (i=0; i<deviceInfo->numberRepeater0; i++) 
-	{ 
-		if(0 == strcmp(repeaterWifi,deviceInfo->dInfoRepeater0[i].ssid))
-		{
+	
+	for (i=0; i<deviceInfo->numberRepeater0; i++) { 
+		res++;
+		checkFlag = 1;
+		if(0 == strcmp(repeaterWifi,deviceInfo->dInfoRepeater0[i].ssid)){
+			sprintf(WLAN_IF,"%s","wlan0");
+			printf("@@@@@@ WLAN_IF = %s\n",WLAN_IF);
+	
+			printf("@@@@@@ repeater check 2-0th\n");
 			sprintf(cmd, "flash set REPEATER_ENABLED2 0;flash set REPEATER_ENABLED1 1; flash set REPEATER_SSID1 %s; flash set WLAN0_CHANNEL %s",
 					config->name,  config->channel);
-			if (cmd_set(cmd, result) < 0)
-			{
-				DEBUG_ERR("flash default error 2th\n");
+			if (cmd_set(cmd, result) < 0){
+				DEBUG_ERR("@@@@@@ flash default error 2th\n");
 				return(-1);
 			}
-			
-			if (strcmp(config->key_type, "WPA-Mixed") == 0)
-			{
+				
+			printf("@@@@@@ repeater check 3-0th\n");
+			if (strcmp(config->key_type, "WPA-Mixed") == 0){
+				printf("@@@@@@ repeater check 4-0th\n");
 				sprintf(cmd, "flash set WLAN0_VAP4_WLAN_DISABLED 0");
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 3th\n");
-					return(-1);
-				}
-			
-				sprintf(cmd, "flash set WLAN0_VAP4_ENCRYPT 6; WLAN0_VAP4_WPA_CIPHER_SUITE 3");
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 4th\n");
-					return(-1);
-				}
-			
-				sprintf(cmd, "flash set WLAN0_VAP4_WPA2_CIPHER_SUITE 3");
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 5th\n");
+				if (cmd_set(cmd, result) < 0){
+					DEBUG_ERR("@@@@@@ flash default error 3th\n");
 					return(-1);
 				}
 				
+				printf("@@@@@@ repeater check 5-0th\n");
+				sprintf(cmd, "flash set WLAN0_VAP4_ENCRYPT 6; WLAN0_VAP4_WPA_CIPHER_SUITE 3");
+				if (cmd_set(cmd, result) < 0){
+					DEBUG_ERR("@@@@@@ flash default error 4th\n");
+					return(-1);
+				}
+				
+				printf("@@@@@@ repeater check 6-0th\n");
+				sprintf(cmd, "flash set WLAN0_VAP4_WPA2_CIPHER_SUITE 3");
+				if (cmd_set(cmd, result) < 0){
+					DEBUG_ERR("@@@@@@ flash default error 5th\n");
+					return(-1);
+				}
+					
+				printf("@@@@@@ repeater check 7-0th\n");
 				sprintf(cmd, "flash set WLAN0_VAP4_SSID %s; flash set WLAN0_VAP4_WPA_PSK %s",
 					config->name,  config->key);
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 6th\n");
+				if (cmd_set(cmd, result) < 0){
+					DEBUG_ERR("@@@@@@ flash default error 6th\n");
 					return(-1);
 				}
-			
+				
+				printf("@@@@@@ repeater check 8-0th\n");
 				sprintf(cmd, "flash set WLAN1_VAP4_WSC_CONFIGURED 1; flash set WLAN1_VAP4_WSC_SSID %s",
 					config->name);
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 7th\n");
+				if (cmd_set(cmd, result) < 0){
+					DEBUG_ERR("@@@@@@ flash default error 7th\n");
 					return(-1);
 				}
 			}
+			checkFlag = 0;
+			break;
 		}
 	}
-
-	for (i=0; i<deviceInfo->numberRepeater1; i++) 
-	{ 
-		if(0 == strcmp(repeaterWifi,deviceInfo->dInfoRepeater1[i].ssid))
-		{
-			sprintf(cmd, "flash set REPEATER_ENABLED1 0; flash set REPEATER_ENABLED2 1; flash set REPEATER_SSID2 %s; flash set WLAN1_CHANNEL %s",
-					config->name,  config->channel);
-			if (cmd_set(cmd, result) < 0)
-			{
-				DEBUG_ERR("flash default error 2th\n");
-				return(-1);
-			}
-	
-			if (strcmp(config->key_type, "WPA-Mixed") == 0)
-			{
-				printf("repeater check 4-1th\n");
-				sprintf(cmd, "flash set WLAN1_VAP4_WLAN_DISABLED 0");
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 3th\n");
-					return(-1);
-				}
-
-				sprintf(cmd, "flash set WLAN1_VAP4_ENCRYPT 6; WLAN1_VAP4_WPA_CIPHER_SUITE 3");
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 4th\n");
-					return(-1);
-				}
-
-				sprintf(cmd, "flash set WLAN1_VAP4_WPA2_CIPHER_SUITE 3");
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 5th\n");
+		if(checkFlag){
+		res = 0;
+		for (i=0; i<deviceInfo->numberRepeater1; i++) { 
+			res++;
+			if(0 == strcmp(repeaterWifi,deviceInfo->dInfoRepeater1[i].ssid)){
+				sprintf(WLAN_IF,"%s","wlan1");
+				printf("@@@@@@ WLAN_IF = %s\n",WLAN_IF);
+				
+				printf("@@@@@@ repeater check 2-1th\n");
+				sprintf(cmd, "flash set REPEATER_ENABLED1 0; flash set REPEATER_ENABLED2 1; flash set REPEATER_SSID2 %s; flash set WLAN1_CHANNEL %s",
+						config->name,  config->channel);
+				if (cmd_set(cmd, result) < 0){
+					DEBUG_ERR("@@@@@@ flash default error 2th\n");
 					return(-1);
 				}
 		
-				sprintf(cmd, "flash set WLAN1_VAP4_SSID %s; flash set WLAN1_VAP4_WPA_PSK %s",
-					config->name,  config->key);
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("lash default error 6th\n");
-					return(-1);
-				}
+				printf("@@@@@@ repeater check 3-1th\n");
+				if (strcmp(config->key_type, "WPA-Mixed") == 0){
+					printf("@@@@@@ repeater check 4-1th\n");
+					sprintf(cmd, "flash set WLAN1_VAP4_WLAN_DISABLED 0");
+					if (cmd_set(cmd, result) < 0){
+						DEBUG_ERR("@@@@@@ flash default error 3th\n");
+						return(-1);
+					}
 	
-				sprintf(cmd, "flash set WLAN1_VAP4_WSC_CONFIGURED 1; flash set WLAN1_VAP4_WSC_SSID %s",
-					config->name);
-				if (cmd_set(cmd, result) < 0)
-				{
-					DEBUG_ERR("flash default error 7th\n");
-					return(-1);
+					printf("@@@@@@ repeater check 5-1th\n");
+					sprintf(cmd, "flash set WLAN1_VAP4_ENCRYPT 6; WLAN1_VAP4_WPA_CIPHER_SUITE 3");
+					if (cmd_set(cmd, result) < 0){
+						DEBUG_ERR("@@@@@@ flash default error 4th\n");
+						return(-1);
+					}
+	
+					printf("@@@@@@ repeater check 6-1th\n");
+					sprintf(cmd, "flash set WLAN1_VAP4_WPA2_CIPHER_SUITE 3");
+					if (cmd_set(cmd, result) < 0){
+						DEBUG_ERR("@@@@@@ flash default error 5th\n");
+						return(-1);
+					}
+			
+					printf("@@@@@@ repeater check 7-1th\n");
+					sprintf(cmd, "flash set WLAN1_VAP4_SSID %s; flash set WLAN1_VAP4_WPA_PSK %s",
+						config->name,  config->key);
+					if (cmd_set(cmd, result) < 0){
+						DEBUG_ERR("@@@@@@ flash default error 6th\n");
+						return(-1);
+					}
+		
+					printf("@@@@@@ repeater check 8-1th\n");
+					sprintf(cmd, "flash set WLAN1_VAP4_WSC_CONFIGURED 1; flash set WLAN1_VAP4_WSC_SSID %s",
+						config->name);
+					if (cmd_set(cmd, result) < 0){
+						DEBUG_ERR("@@@@@@ flash default error 7th\n");
+						return(-1);
+					}
 				}
+				break;
 			}
 		}
 	}
-
-	if(type == BOXSET)
-	{
-		router_init_script("all");
+	
+	char command[50];
+	sprintf(command,"ifconfig %s-vxd down",WLAN_IF);
+	system(command);
+	
+	sprintf(command,"ifconfig %s down",WLAN_IF);
+	system(command);
+	sprintf(command,"flash set_mib %s",WLAN_IF);
+	system(command);
+	sprintf(command,"ifconfig %s up",WLAN_IF);
+	system(command);
+	
+	sprintf(command,"flash set_mib %s-vxd",WLAN_IF);					  
+	system(command);
+	sprintf(command,"ifconfig %s-vxd up",WLAN_IF);
+	system(command);
+	sleep(3);
+			
+	system("sysconf wlanapp start wlan0 wlan1 br0");
+	sleep(1);
+	system("sysconf upnpd 1 1");
+	sleep(1);
+	
+	int wait_time = 0,max_wait_time= 30;
+	res--;
+	printf("@@@@@@ res 1th = %d\n",res);
+	while (1) {
+		if(!strstr(WLAN_IF,"-vxd")){
+			strcat(WLAN_IF,"-vxd");
+			printf("@@@@@@ WLAN_IF 1th = %s\n",WLAN_IF);
+		}
+		if ( getWlJoinResultForRepeater(WLAN_IF, &res) < 0 ) {
+			printf("@@@@@@ Get Join result failed!\n");
+			return 0;
+		}
+	
+		if(res==STATE_Bss  || res==STATE_Ibss_Idle || res==STATE_Ibss_Active) { // completed 
+			break;
+		}else{
+			if (wait_time++ > max_wait_time) {
+				printf("@@@@@@ connect timeout 1th!\n");
+				return 0;
+			}
+		}
+		sleep(1);
 	}
-	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
+	
+	if ( res!=STATE_Bss && res!=STATE_Ibss_Idle && res!=STATE_Ibss_Active ){
+		printf("@@@@@@ Connect failed 4!\n");
+	}else { 
+		int repeaterStatus = 0;
+		bss_info bss;
+		wait_time = 0;
+		max_wait_time = 15; 
+		while (wait_time++ < max_wait_time) {
+			getWlBssInfoForRepeater(WLAN_IF, &bss);
+			if (bss.state == STATE_CONNECTED){
+				break;
+			}
+			sleep(1);
+		}
+		if (wait_time > max_wait_time){ 					
+			printf("@@@@@@connect timeout 2th!\n");
+			sprintf(command, "flash set DHCP 2");
+			if (cmd_set(command, result) < 0){
+				printf("@@@@@@ flash default error 1th\n");
+			}
+		
+			sprintf(command, "flash set REPEATER_ENABLED1 0");
+			if (cmd_set(command, result) < 0){
+				printf("@@@@@@ flash default error 2th\n");
+			}
+	
+			sprintf(cmd, "flash set REPEATER_ENABLED2 0");
+			if (cmd_set(cmd, result) < 0){
+				printf("@@@@@@ flash default error 3th\n");
+			}
+		}else{
+			printf("@@@@@@ Connect successfully!\n");
+		}
+	}
 	
 	free(deviceInfo);	
 	deviceInfo = NULL;
-
+	
+	if(type == BOXSET){
+		router_init_script("all");
+	}
+	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
+			  
 	return 0;
 }
 
@@ -1541,8 +1655,11 @@ static int set_mac_addr(DEVICE_TYPE_t type, router_mac_t *config, void* context)
 	}
 
 // init all
-	router_init_script("all");
-
+//	router_init_script("all");
+	if (cmd_set("reboot", result) < 0){
+		DEBUG_ERR("router reboot error\n");
+		return(-1);
+	}
 	sprintf((char*)context, "\{\"STATUS\":\"%s\"}", result);
 
 	return 0;

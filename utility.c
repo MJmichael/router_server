@@ -2926,7 +2926,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 	char *ptr;
 
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 	do {
 #ifdef COMPRESS_MIB_SETTING
 		pCompHeader =(COMPRESS_MIB_HEADER_Tp)&data[complen];
@@ -2934,7 +2933,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 		pCompHeader->compRate = WORD_SWAP(pCompHeader->compRate);
 		pCompHeader->compLen = DWORD_SWAP(pCompHeader->compLen);
 #endif
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 		/*decompress and get the tag*/
 		expFile=malloc(pCompHeader->compLen*pCompHeader->compRate);
 		if(NULL==expFile)
@@ -2953,7 +2951,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 				isHdware=1;
 				phwHeader=(HW_PARAM_HEADER_Tp)expFile;
 			}			
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 #endif
 #else
 #ifdef HEADER_LEN_INT
@@ -2982,7 +2979,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 		if ( sscanf(&pHeader->signature[TAG_LEN], "%02d", &ver) != 1)
 			ver = -1;
 			
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 		force = -1;
 		if ( !memcmp(pHeader->signature, CURRENT_SETTING_HEADER_TAG, TAG_LEN) )
 			force = 1; // update
@@ -2990,7 +2986,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			force = 2; // force
 		else if ( !memcmp(pHeader->signature, CURRENT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN))
 			force = 0; // upgrade
-	printf("%s %d, force:%d\n", __FUNCTION__, __LINE__, force);
 
 		if ( force >= 0 ) {
 #if 0
@@ -3012,7 +3007,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			ptr = &data[len];
 #endif
 
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 #ifdef COMPRESS_MIB_SETTING
 #else
 #ifdef HEADER_LEN_INT
@@ -3022,7 +3016,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 			DECODE_DATA(ptr, pHeader->len);
 #endif
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 			
 #ifdef HEADER_LEN_INT
 			if(isHdware)
@@ -3041,7 +3034,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #ifdef _LITTLE_ENDIAN_
 			swap_mib_word_value((APMIB_Tp)ptr);
 #endif
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 // added by rock /////////////////////////////////////////
 #ifdef VOIP_SUPPORT
@@ -3049,7 +3041,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			flash_voip_import_fix(&((APMIB_Tp)ptr)->voipCfgParam, &pMib->voipCfgParam);
 #endif
 #endif
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 #ifdef COMPRESS_MIB_SETTING
 			apmib_updateFlash(CURRENT_SETTING, &data[complen], pCompHeader->compLen+sizeof(COMPRESS_MIB_HEADER_T), force, ver);
@@ -3061,7 +3052,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #endif
 			apmib_updateFlash(CURRENT_SETTING, ptr, pHeader->len-1, force, ver);
 #endif
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 #ifdef COMPRESS_MIB_SETTING
 			complen += pCompHeader->compLen+sizeof(COMPRESS_MIB_HEADER_T);
@@ -3081,7 +3071,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			type |= CURRENT_SETTING;
 			continue;
 		}
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 
 		if ( !memcmp(pHeader->signature, DEFAULT_SETTING_HEADER_TAG, TAG_LEN) )
@@ -3090,7 +3079,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 			force = 2;	// force
 		else if ( !memcmp(pHeader->signature, DEFAULT_SETTING_HEADER_UPGRADE_TAG, TAG_LEN) )
 			force = 0;	// upgrade
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 		if ( force >= 0 ) {
 #if 0
@@ -3111,7 +3099,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 #else
 			ptr = &data[len];
 #endif
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 
 #ifdef COMPRESS_MIB_SETTING
 #else
@@ -3137,7 +3124,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 				break;
 			}
 
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 #ifdef _LITTLE_ENDIAN_
 			swap_mib_word_value((APMIB_Tp)ptr);
 #endif
@@ -3273,7 +3259,6 @@ static int updateConfigIntoFlash(unsigned char *data, int total_len, int *pType,
 
 	*pType = type;
 	*pStatus = status;
-	printf("%s %d\n", __FUNCTION__, __LINE__);
 #ifdef COMPRESS_MIB_SETTING	
 	return complen;
 #else
@@ -3901,6 +3886,7 @@ unsigned int getWLAN_ChipVersion()
 			{
 				strtmp++;
 			}
+			
 
 			if(strstr(strtmp,"RTL8192SE") != 0)
 			{
@@ -3935,6 +3921,8 @@ unsigned int getWLAN_ChipVersion()
 	}
 
 	return chipVersion;
+
+
 }
 
 int isFileExist(char *file_name)
@@ -4337,6 +4325,7 @@ int getWlP2PStateEvent( char *interface, P2P_SS_STATUS_Tp pP2PStatus)
   return 0;
 }
 
+
 int getClientConnectState(char* wlan_interface_name)
 {
 
@@ -4370,6 +4359,7 @@ int getClientConnectState(char* wlan_interface_name)
 	return P2PStatus_t.p2p_status;
 	
 }
+
 
 int sendP2PProvisionCommInfo( char *interface, P2P_PROVISION_COMM_Tp pP2PProvisionComm)
 {

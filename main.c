@@ -136,7 +136,31 @@ int server_init(void)
 		return(-1);  
 	} 
 
-	sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
+	char recvbuf[1024] = {0}, sendbuf[4096]; 
+	int n;
+	socklen_t recvlen; 
+
+	recvlen = sizeof(servaddr);
+	do {
+		sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
+		usleep(1000);
+
+		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
+		if(n == -1)
+		{
+			if (errno == EINTR)
+			{
+				continue;
+			}
+			break;
+		}
+		else if (n >  0)
+		{
+			DEBUG_ERR("Recv data from client\n");
+			break;
+		}		
+	}while (1);
+	
 	close(sock);
 
 	return 0;
@@ -171,10 +195,9 @@ void loop(int sock)
 
 	char recvbuf[1024] = {0}, sendbuf[4096]; 
 	int n;
-	socklen_t recvlen; 
+	socklen_t recvlen = sizeof(recvaddr);
 
 	do {
-		recvlen = sizeof(recvaddr);
 		memset(recvbuf,  0,  sizeof(recvbuf));
 		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
 #ifdef _DEBUG_MAIN_
@@ -241,7 +264,7 @@ void* check_update_thread(void *args)
 	char tmp[1024];
 	do {
 		check_version(0, NULL);
-		sleep(5);
+		sleep(5*60);
 	//	router_update_firmware(PHONE, (void*)tmp);
 	} while(1);
 }

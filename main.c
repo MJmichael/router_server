@@ -102,9 +102,9 @@ void wait_online(void)
 {
 	do {
 #ifdef _DEBUG_MAIN_
-			DEBUG_ERR("Wait for eth0 up\n");
+		DEBUG_ERR("Wait for eth0 up\n");
 #endif
-			usleep(1000);
+		usleep(1000);
 	} while(get_host_status("eth0") == 0);
 	
 	system("route add -host 255.255.255.255 dev br0");
@@ -116,23 +116,14 @@ void wait_online(void)
 int server_init(int sock)
 {
 	struct sockaddr_in servaddr; 
-	int sock; 
 	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
 	char addr[1024];
 
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(5188); 
-//	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
-
-/**
-	if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) <  0) 
-	{
-		DEBUG_ERR("socket");
-		return(-1);
-	}
-**/
+	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+//	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 
 	static int opt = 1;
 	int nb = 0;  
@@ -143,27 +134,50 @@ int server_init(int sock)
         return(-1);  
     } 
 
-	struct timeval tv_out;
-    tv_out.tv_sec = 5;//µÈ´ý10Ãë
-    tv_out.tv_usec = 0;
-	nb = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv_out, sizeof(tv_out));
-	if(nb == -1)
-    {  
-        DEBUG_ERR("error\n");
-        return(-1);  
-    }
-
 	char recvbuf[1024] = {0}, sendbuf[4096]; 
-	int n;
 	socklen_t recvlen; 
+	//select
+	fd_set rfds;
+    struct timeval tv;
+    int retval, maxfd;
 
+	FD_ZERO(&rfds);
+	FD_SET(sock, &rfds);
+
+	tv.tv_sec = 5;
+	tv.tv_usec = 0;	
+	
 	recvlen = sizeof(servaddr);
+
 	do {
 		sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 		usleep(1000);
 
-		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
-		if(n == -1)
+		retval = select(sock+1, &rfds, NULL, NULL, &tv);
+		if (retval <= 0) 
+		{
+			ret_msg("Timeout exit!\n");
+		}
+		else if(FD_ISSET(sock, &rfds)) 
+		{
+			if(read(sock, recvbuf, sizeof(recvbuf) - 1) < 0) 
+			{
+				continue;
+			}
+
+			if(start_with(recvbuf, "UNetConnectSuccess")) 
+			{
+				printf("Sever is Online!\n");
+				break;
+			}
+			else
+			{
+				continue;
+			}	
+		}
+/**
+		nb = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
+		if(nb == -1)
 		{
 			if (errno == EINTR)
 			{
@@ -171,7 +185,7 @@ int server_init(int sock)
 			}
 			break;
 		}
-		else if (n >  0)
+		else if (nb >  0)
 		{
 			if(start_with(recvbuf, "UNetConnectSuccess")) 
 			{
@@ -182,7 +196,8 @@ int server_init(int sock)
 			{
 				continue;
 			}			
-		}		
+		}	
+**/
 	}while (1);
 	
 	//close(sock);
@@ -245,7 +260,7 @@ void loop(int sock)
 			{
 				if (parser_cmd(recvbuf, BOXSET, &router_init, sendbuf) == 0) 
 				{
-					//response to client, send	
+					//response to Box client, send	
 #ifdef _DEBUG_MAIN_
 					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif
@@ -259,7 +274,7 @@ void loop(int sock)
 			} else if(start_with(recvbuf, "UPhoneV002")) {
 				if (parser_cmd(recvbuf, PHONE, &router_init, sendbuf) == 0) 
 				{
-					//response to client, send	
+					//response to Phone client, send	
 #ifdef _DEBUG_MAIN_
 					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif

@@ -50,8 +50,7 @@ static int get_broadcast_addr(char* addr)
 	  return -1;
 	  }
 	  printf("host:%s\n", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
-	//获得广播地址
-	 **/
+	**/
 /**
 	bzero(&ifr, sizeof(ifr));
 	strcpy(ifr.ifr_name, "br0");
@@ -97,44 +96,62 @@ static int get_host_status(const char* addr)
 #endif
 
 /**
+** wait network online;
+**/
+void wait_online(void)
+{
+	do {
+#ifdef _DEBUG_MAIN_
+			DEBUG_ERR("Wait for eth0 up\n");
+#endif
+			usleep(1000);
+	} while(get_host_status("eth0") == 0);
+	
+	system("route add -host 255.255.255.255 dev br0");
+}
+
+/**
 ** server start, send udp broadcast: init;
 **/
-int server_init(void)
+int server_init(int sock)
 {
 	struct sockaddr_in servaddr; 
 	int sock; 
-	char str[]="UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
+	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
 	char addr[1024];
 
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(5188); 
-	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+//	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 
-	do
-	{
-#ifdef _DEBUG_MAIN_
-		DEBUG_ERR("Wait for eth0 up\n");
-#endif
-		usleep(1000);
-	} while(get_host_status("eth0") == 0);
-
-	system("route add -host 255.255.255.255 dev br0");
-
+/**
 	if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) <  0) 
 	{
 		DEBUG_ERR("socket");
 		return(-1);
 	}
+**/
 
 	static int opt = 1;
 	int nb = 0;  
-	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
-	if(nb == -1)  
-	{  
-		DEBUG_ERR("error\n");
-		return(-1);  
-	} 
+  	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
+   	if(nb == -1)  
+    {  
+        DEBUG_ERR("error\n");
+        return(-1);  
+    } 
+
+	struct timeval tv_out;
+    tv_out.tv_sec = 5;//µÈ´ý10Ãë
+    tv_out.tv_usec = 0;
+	nb = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv_out, sizeof(tv_out));
+	if(nb == -1)
+    {  
+        DEBUG_ERR("error\n");
+        return(-1);  
+    }
 
 	char recvbuf[1024] = {0}, sendbuf[4096]; 
 	int n;
@@ -156,12 +173,19 @@ int server_init(void)
 		}
 		else if (n >  0)
 		{
-			DEBUG_ERR("Recv data from client\n");
-			break;
+			if(start_with(recvbuf, "UNetConnectSuccess")) 
+			{
+				printf("Over net check\n");
+				break;
+			}
+			else
+			{
+				continue;
+			}			
 		}		
 	}while (1);
 	
-	close(sock);
+	//close(sock);
 
 	return 0;
 }
@@ -173,19 +197,15 @@ void loop(int sock)
 { 
 	int router_init = 1;
 
+/**
 	struct sockaddr_in servaddr; 
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(5188); 
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+**/
 
-	//Create server sock and bind;
-	if (bind(sock, (struct sockaddr *)&servaddr,  sizeof(servaddr)) <  0) 
-	{
-		ERR_EXIT( "Bind Error!");
-	}   
-
-	//For recv udp broadcast  
+	//for recv udp broadcast  
 	struct sockaddr_in recvaddr;  
 
 	bzero(&recvaddr, sizeof(struct sockaddr_in));
@@ -196,6 +216,13 @@ void loop(int sock)
 	char recvbuf[1024] = {0}, sendbuf[4096]; 
 	int n;
 	socklen_t recvlen = sizeof(recvaddr);
+
+	//create server sock
+	//bind
+	if (bind(sock, (struct sockaddr *)&recvaddr,  sizeof(recvaddr)) <  0) 
+	{
+		ERR_EXIT( "Bind Error!");
+	}
 
 	do {
 		memset(recvbuf,  0,  sizeof(recvbuf));
@@ -261,7 +288,7 @@ void loop(int sock)
 //Update module thread
 void* check_update_thread(void *args)
 {
-	char tmp[1024];
+	//char tmp[1024];
 	do {
 		check_version(0, NULL);
 		sleep(5*60);
@@ -286,10 +313,11 @@ int main(int argc, char* argv[])
 		default:
 			exit(0);
 	}
-
-//	formWlSiteSurvey(NULL, NULL, NULL);
 //1. parser init
     parser_init();
+
+//2. wait online
+	wait_online();
 
 //2. Update thread
     pthread_create(&p_thread, NULL, check_update_thread, NULL);
@@ -299,15 +327,16 @@ int main(int argc, char* argv[])
 
 	do
 	{
-		//server init
-		if(server_init() < 0)
-		{
-			ERR_EXIT("ServerInit error\n");
-		}
-
+		//creat sock and online;
 		if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
 		{
 			ERR_EXIT( "socket error\n"); 
+		}
+		
+		//server init
+		if(server_init(sock) < 0)
+		{
+			ERR_EXIT("ServerInit error\n");
 		}
 
 		//loop

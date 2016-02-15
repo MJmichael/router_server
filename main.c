@@ -116,7 +116,7 @@ void wait_online(void)
 int server_init(int sock)
 {
 	struct sockaddr_in servaddr; 
-	int sock; 
+	//int sock; 
 	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
 	char addr[1024];
 
@@ -162,7 +162,7 @@ int server_init(int sock)
 		sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 		usleep(1000);
 
-		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
+		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&servaddr, &recvlen);
 		if(n == -1)
 		{
 			if (errno == EINTR)

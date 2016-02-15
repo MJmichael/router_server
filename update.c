@@ -186,7 +186,9 @@ static int check_server_msg(int s, char *hostname)
 		ret_msg("Timeout exit!\n");
 		close(s);
 		return RET_ERROR;
-	}else if(FD_ISSET(s, &rfds)) {
+	}
+	else if(FD_ISSET(s, &rfds)) 
+	{
 		if(read(s, server_msg, sizeof(server_msg) - 1) < 0) 
 		{
 			ret_msg("Read() failed!\n");

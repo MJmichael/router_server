@@ -110,33 +110,79 @@ void wait_online(void)
 	system("route add -host 255.255.255.255 dev br0");
 }
 
-/**
-** server start, send udp broadcast: init;
-**/
-int server_init(int sock)
+//Server online module thread
+void* server_online_thread(void *args)
 {
 	struct sockaddr_in servaddr; 
 	//int sock; 
 	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
 	char addr[1024];
-
+	int sockfd;
+	
 	memset(&servaddr,  0,  sizeof(servaddr)); 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(5188); 
 	servaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-//	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
 
 	static int opt = 1;
 	int nb = 0;  
-  	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
+
+	sockfd = socket(AF_INET,SOCK_DGRAM,0);
+		
+	nb = setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));  
+	if(nb == -1)  
+	{  
+		DEBUG_ERR("error\n");
+		return(-1);  
+	} 
+
+	nb = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));  
    	if(nb == -1)  
     {  
         DEBUG_ERR("error\n");
         return(-1);  
-    } 
+    }
 
-	char recvbuf[1024] = {0}, sendbuf[4096]; 
-	socklen_t recvlen; 
+	do {
+		sendto(sockfd, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
+		usleep(1000*1000);
+	} while(1);
+
+	close(sockfd);
+}
+
+/**
+** server start, send udp broadcast: init;
+**/
+int server_init(int sock)
+{
+	struct sockaddr_in recvaddr; 
+	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
+	char addr[1024];
+	
+	memset(&recvaddr,  0,  sizeof(recvaddr)); 
+	recvaddr.sin_family = AF_INET; 
+	recvaddr.sin_port = htons(5188); 
+	recvaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
+
+	static int opt = 1;
+	int nb = 0;  
+
+	nb = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt));  
+   	if(nb == -1)  
+    {  
+        DEBUG_ERR("error\n");
+        return(-1);  
+    }
+	
+	//create server sock and bind
+	if (bind(sock, (struct sockaddr *)&recvaddr,  sizeof(recvaddr)) <  0)
+	{
+		ERR_EXIT( "Bind Error!");
+	}
+
+	char recvbuf[1024] = {0}; 
+	//socklen_t recvlen; 
 	//select
 	fd_set rfds;
     struct timeval tv;
@@ -147,12 +193,15 @@ int server_init(int sock)
 
 	tv.tv_sec = 5;
 	tv.tv_usec = 0;	
-	
-	recvlen = sizeof(servaddr);
+	pthread_t pthread_online;
 
+	pthread_create(&pthread_online, NULL, server_online_thread, NULL);
+	
 	do {
+		/**
 		sendto(sock, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 		usleep(1000);
+		**/
 
 		retval = select(sock+1, &rfds, NULL, NULL, &tv);
 		if (retval <= 0) 
@@ -176,32 +225,9 @@ int server_init(int sock)
 				continue;
 			}	
 		}
-/**
-		nb = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
-		if(nb == -1)
-		{
-			if (errno == EINTR)
-			{
-				continue;
-			}
-			break;
-		}
-		else if (nb >  0)
-		{
-			if(start_with(recvbuf, "UNetConnectSuccess")) 
-			{
-				printf("Over net check\n");
-				break;
-			}
-			else
-			{
-				continue;
-			}			
-		}	
-**/
 	}while (1);
 	
-	//close(sock);
+	close(sock);
 
 	return 0;
 }
@@ -212,14 +238,6 @@ int server_init(int sock)
 void loop(int sock) 
 { 
 	int router_init = 1;
-
-/**
-	struct sockaddr_in servaddr; 
-	memset(&servaddr,  0,  sizeof(servaddr)); 
-	servaddr.sin_family = AF_INET; 
-	servaddr.sin_port = htons(5188); 
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-**/
 
 	//for recv udp broadcast  
 	struct sockaddr_in recvaddr;  

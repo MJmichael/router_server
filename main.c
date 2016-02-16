@@ -114,6 +114,7 @@ void wait_online(void)
 void* server_online_thread(void *args)
 {
 	struct sockaddr_in servaddr; 
+	//int sock; 
 	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
 	char addr[1024];
 	int sockfd;

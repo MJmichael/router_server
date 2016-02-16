@@ -157,7 +157,7 @@ int server_init(int sock)
 		retval = select(sock+1, &rfds, NULL, NULL, &tv);
 		if (retval <= 0) 
 		{
-			ret_msg("Timeout exit!\n");
+			printf("Timeout exit!\n");
 		}
 		else if(FD_ISSET(sock, &rfds)) 
 		{

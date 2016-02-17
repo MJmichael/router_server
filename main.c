@@ -37,48 +37,6 @@
 
 static int pipe_fw[2];
 
-#if 0
-static int get_broadcast_addr(char* addr)
-{
-	int inet_sock;
-	struct ifreq ifr;
-
-	bzero(&ifr, sizeof(ifr));
-	inet_sock = socket(AF_INET, SOCK_DGRAM, 0);
-	/**
-	  strcpy(ifr.ifr_name, "eth0");
-	  if (ioctl(inet_sock, SIOCGIFADDR, &ifr) < 0)
-	  {
-	  perror("ioctl");
-	  return -1;
-	  }
-	  printf("host:%s\n", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
-	**/
-/**
-	bzero(&ifr, sizeof(ifr));
-	strcpy(ifr.ifr_name, "br0");
-	if (ioctl(inet_sock, SIOCGIFBRDADDR, &ifr) < 0)
-	{
-		perror("ioctl");
-		return -1;
-	}
-**/
-
-	bzero(&ifr, sizeof(ifr));
-	strcpy(ifr.ifr_name, "br0");
-	if (ioctl(inet_sock, SIOCGIFFLAGS, &ifr) < 0)
-	{
-		perror("ioctl");
-		return -1;
-	}
-
-	return(ifr.ifr_flags & IFF_UP ? 1 : 0);
-//	get_broadcast_addr(addr);
-//	sprintf(addr, "%s", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
-//	printf("broadcast:%s\n", inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
-//  return 0;
-}
-#else
 static int get_host_status(const char* addr)
 {
 	int inet_sock;
@@ -96,7 +54,6 @@ static int get_host_status(const char* addr)
 
 	return(ifr.ifr_flags & IFF_UP ? 1 : 0);
 }
-#endif
 
 /**
 ** wait network online;
@@ -138,26 +95,9 @@ int write_all(int fd, const char *buf, size_t count)
 int read_all(int fd, char *buf, size_t count)
 {
 	int ret;
-	int len  = 0;
-	int save = count;
 
-	//while(count > 0)
-	//{
-		ret = read(fd, buf + len, count);
-#if 0
-		if (ret <= 0) {
-			if (errno == EINTR)
-				continue;
-			else
-				break;
-		}
-#endif
-	//	len   += ret;
-	//	count -= ret;
-	//}
-
-	//return len == save ? 0 : -1;
-		return ret;
+	ret = read(fd, buf, count);
+	return ret;
 }
 
 //Server online module thread
@@ -207,22 +147,24 @@ void* server_online_thread(void *args)
 		ret = poll(pfd, pollcnt, timeout);
 		if(ret == 0)
 		{
-			printf("poll timeout\n");
+			printf("Poll timeout, Send 1'm online\n");
 			sendto(sockfd, str, strlen(str), 0, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
 		}
 
-		if (ret < 0) {
-			if ((errno == EAGAIN) || (errno == EINTR)) {
+		if (ret < 0) 
+		{
+			if ((errno == EAGAIN) || (errno == EINTR)) 
+			{
 				continue;
 			}
-			printf("poll failed: %d(%s)\n", errno, strerror(errno));
+			printf("Poll failed: %d(%s)\n", errno, strerror(errno));
 		}
 		
 		if (pfd[0].revents & POLLIN) 
 		{
-			printf("Poll Event POLLIN\n");
 			ret = read_all(pipe_fw[0], recv, sizeof(recv));
-			if (ret < 0) {
+			if (ret < 0) 
+			{
 				printf("Recv info from pipe failed: %d(%s)\n", errno, strerror(errno));
 			}
 			printf("Recv info from pipe: (%s)\n", recv);
@@ -235,10 +177,9 @@ void* server_online_thread(void *args)
 }
 
 /**
-** server start, send udp broadcast: init;
+** server thread,recviver and process cmd;
 **/
-//int server_init(int sock)
-int server_init(void)
+int server_thread(void)
 {
 	struct sockaddr_in recvaddr; 
 	char str[] = "UBoxV002:response:get_router_reboot;\{\"ServerInit\":\"success\"}";
@@ -263,7 +204,6 @@ int server_init(void)
 	int sock;
 
 	do {
-
 		if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
 		{
 			return(-1);
@@ -319,14 +259,12 @@ int server_init(void)
 #ifdef _DEBUG_MAIN_
 					DEBUG_WARN("sendbuf:%s\n", sendbuf);
 #endif
-					//sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 					printf("sendbuf:%s\n", sendbuf);
 					write_all(pipe_fw[1], sendbuf, strlen(sendbuf));
 				}
 				close(sock);
 				continue;
 			} 
-#if 0
 			else if(start_with(recvbuf, "UPhoneV002")) 
 			{
 				if (parser_cmd(recvbuf, PHONE, &router_init, sendbuf) == 0) 
@@ -340,124 +278,31 @@ int server_init(void)
 #ifdef _DEBUG_MAIN_
 						DEBUG_ERR("no need init\n");
 #endif
-						//	sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 						write_all(pipe_fw[1], sendbuf, strlen(sendbuf));
 					} else if(router_init == 1) {
 #ifdef _DEBUG_MAIN_
 						DEBUG_ERR("need init\n");
 #endif
-						//		sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
 						write_all(pipe_fw[1], sendbuf, strlen(sendbuf));
 						router_init_script("all");
 					}
 #endif
 				}
-				close(sock);
-				continue;
-			}while (1);
-
-			close(sock);
-
-			return 0;
-		}
-
-#if 0
-/**
- **  udp loop
- **/
-void loop(int sock) 
-{ 
-	int router_init = 1;
-
-	//for recv udp broadcast  
-	struct sockaddr_in recvaddr;  
-
-	bzero(&recvaddr, sizeof(struct sockaddr_in));
-	recvaddr.sin_family = AF_INET;  
-	recvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	recvaddr.sin_port = htons(5188);
-
-	char recvbuf[1024] = {0}, sendbuf[4096]; 
-	int n;
-	socklen_t recvlen = sizeof(recvaddr);
-
-	//create server sock
-	//bind
-	if (bind(sock, (struct sockaddr *)&recvaddr,  sizeof(recvaddr)) <  0) 
-	{
-		ERR_EXIT( "Bind Error!");
-	}
-
-	do {
-		memset(recvbuf,  0,  sizeof(recvbuf));
-		n = recvfrom(sock, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&recvaddr, &recvlen);
-#ifdef _DEBUG_MAIN_
-		DEBUG_WARN("Recv from %s:%s\n", inet_ntoa(recvaddr.sin_addr), recvbuf);
-#endif
-
-		if(n == -1)
-		{
-			if (errno == EINTR)
-			{
-				continue;
-			}
-			break;
-		}
-		else if (n >  0)
-		{
-			if (start_with(recvbuf, "UBoxV002"))
-			{
-				if (parser_cmd(recvbuf, BOXSET, &router_init, sendbuf) == 0) 
-				{
-					//response to Box client, send	
-#ifdef _DEBUG_MAIN_
-					DEBUG_WARN("sendbuf:%s\n", sendbuf);
-#endif
-					sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
-				}
-				else
-				{
-					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
-				}
-				continue;
-			} else if(start_with(recvbuf, "UPhoneV002")) {
-				if (parser_cmd(recvbuf, PHONE, &router_init, sendbuf) == 0) 
-				{
-					//response to Phone client, send	
-#ifdef _DEBUG_MAIN_
-					DEBUG_WARN("sendbuf:%s\n", sendbuf);
-#endif
-					if (router_init == 0) 
-					{
-#ifdef _DEBUG_MAIN_
-						DEBUG_ERR("no need init\n");
-#endif
-						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
-					} else if(router_init == 1) {
-#ifdef _DEBUG_MAIN_
-						DEBUG_ERR("need init\n");
-#endif
-						sendto(sock, sendbuf, strlen(sendbuf), 0, (struct sockaddr *)&recvaddr, recvlen);
-						router_init_script("all");
-					}
-				} else {
-					sendto(sock, "Error Cmd", strlen("Error Cmd"),  0, (struct sockaddr *)&recvaddr, recvlen);
-				}
-				continue;
 			}
 		}
-	} while(1);
+		close(sock);
+		continue;
+	}while (1);
+
+	return 0;
 }
-#endif
 
 //Update module thread
 void* check_update_thread(void *args)
 {
-	//char tmp[1024];
 	do {
 		check_version(0, NULL);
-		sleep(5*60);
-	//	router_update_firmware(PHONE, (void*)tmp);
+		sleep(60*60);
 	} while(1);
 }
 
@@ -499,27 +344,13 @@ int main(int argc, char* argv[])
 	pthread_create(&pthread_online, NULL, server_online_thread, NULL);
 
 //5. create server sock and loop
-
 	do
 	{
-		//creat sock and online;
-		//int sock; 
-		/**
-		if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
-		{
-			ERR_EXIT( "socket error\n"); 
-		}
-		**/
-		
-		//server init
+		//server thread
 		if(server_init() < 0)
 		{
 			ERR_EXIT("ServerInit error\n");
 		}
-
-		//loop
-//		loop(sock);   
-//		close(sock);
 	} while(1);
 
 // fix me;

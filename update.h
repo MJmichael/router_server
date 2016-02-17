@@ -21,7 +21,7 @@ static inline int get_connection(const char *hostname, const int port, const cha
 	addr.sin_port = htons(port);
 
 #ifdef DEBUG_WARN	
-    printf("In get_connection hostname is:%s\n",hostname);
+	printf("In get_connection hostname is:%s\n",hostname);
 #endif
 
 #if 0
@@ -30,14 +30,14 @@ static inline int get_connection(const char *hostname, const int port, const cha
 		addr.sin_addr.s_addr = inet_addr("172.18.8.200"); 
 	} else {
 #endif
-		if ((host = gethostbyname(hostname)) == NULL) 
-		{
-			*err = "gethostbyname() failed 1th";
-			return -1;
-		} else {
-			addr.sin_addr	= *(struct in_addr*)host->h_addr;
-		}
-	//}
+	if ((host = gethostbyname(hostname)) == NULL) 
+	{
+		*err = "gethostbyname() failed 1th";
+		return -1;
+	} else {
+		addr.sin_addr	= *(struct in_addr*)host->h_addr;
+	}
+		//}
 
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s == -1)
